@@ -1,24 +1,24 @@
 # Makefile
 # Compiling and linking tests
-# v.1.0.0
+# v.1.2.0
 
 # When adding a new library:
 # - On this Makefile
 # 	Add its name on LIBNAMES
-# - On the root Makefile
-# 	Move the library interface to HDIR
-# 	Move the library object to LIBDIR
 
 ####################################
 LIBNAMES = lwct
 ####################################
 CC = gcc
-LIBDIR = ../lib/
-HDIR = ../include
-COMPILEFLAGS = -w -I$(HDIR)
-LINKFLAGS = -w $(addprefix -L, $(LIBDIR)) \
+LIBDIRS = $(wildcard ../lib/*)
+IPATH = $(addsuffix /include, $(LIBDIRS))
+LPATH = $(addsuffix /lib, $(LIBDIRS))
+SRCPATH = ../src
+COMPILEFLAGS = -w $(addprefix -I, $(IPATH)) -I$(SRCPATH)
+RTLIBFLAG = -Wl,-R
+LINKFLAGS = -w $(addprefix -L, $(LPATH)) \
 		$(addprefix -l, $(LIBNAMES)) \
- 		$(addprefix -Wl,-R, $(LIBDIR))
+ 		$(addprefix $(RTLIBFLAG), $(LPATH))
 SRC = $(wildcard *.c)
 OUT = $(patsubst %.c, %.out, $(SRC))
 
