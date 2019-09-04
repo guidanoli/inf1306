@@ -31,7 +31,7 @@ bin:
 tests:
 	$(MAKE) -C $(TESTS) > /dev/null
 
-$(LIBPATHS): $(LIBNAMES)
+$(LIB)/%: %
 
 lwctl:
 	git clone https://github.com/guidanoli/$@.git $(LIB)/$@
@@ -43,4 +43,4 @@ clean:
 	$(MAKE) -C $$dir clean; \
 	done > /dev/null
 
-.PHONY: all clean dependecies bin tests $(LIBNAMES)
+.PHONY: all clean dependecies bin tests

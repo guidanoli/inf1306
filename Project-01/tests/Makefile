@@ -20,15 +20,15 @@ LINKFLAGS = -w $(addprefix -L, $(LPATH)) \
 		$(addprefix -l, $(LIBNAMES)) \
  		$(addprefix $(RTLIBFLAG), $(LPATH))
 SRC = $(wildcard *.c)
-OUT = $(patsubst %.c, %.out, $(SRC))
+OUT = $(patsubst t.%.c, %.out, $(SRC))
 
 all: $(OUT)
 
 %.o: %.c
 	$(CC) -c $< $(COMPILEFLAGS)
 
-%.out: %.o
-	$(CC) -o $@ $< $(LINKFLAGS)
+%.out: $(SRCPATH)/%.o t.%.o
+	$(CC) -o $@ $^ $(LINKFLAGS)
 
 clean:
 	rm -f *.out
