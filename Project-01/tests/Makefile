@@ -31,6 +31,6 @@ all: $(OUT)
 	$(CC) -o $@ $^ $(LINKFLAGS)
 
 clean:
-	rm -f *.out
+	rm -f *.out *.o
 
 .PHONY: all clean

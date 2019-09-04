@@ -1,5 +1,5 @@
 /*
- * parser.h, v.0.2
+ * parser.h, v.0.3
  *
  * GVRP instance file parser
  */
@@ -9,7 +9,7 @@
 
 /*
  * Instance information
- * @ instance_name      - instance name
+ * @ name               - instance name
  * @ nodes              - customer nodes info
  * @ node_cnt           - node count
  * @ vehicle_cnt        - vehicle count
@@ -17,7 +17,7 @@
  * @ max_cap            - maximum vehicle capacity
  */
 struct instance_t {
-        char *instance_name;
+        char *name;
         struct node_t *nodes;
         unsigned int node_cnt;
         unsigned int vehicle_cnt;
@@ -43,10 +43,10 @@ struct node_t {
 
 /*
  * Parses all information about a GVRP instance
- * within a formatted file into a C data structure
- * @ filepath   - path of file containing instance information
+ * within a formatted input into a C data structure
+ * Reads input from stdin (which can be piped from file)
  * > instance information or (void *) 0 on error
  */
-struct instance_t *parse_gvrp_instance(char *filepath);
+struct instance_t *parse_gvrp_instance();
 
 #endif
