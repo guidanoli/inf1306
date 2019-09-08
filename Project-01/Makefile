@@ -1,4 +1,4 @@
-# Project 1 Makefile v.3.0.0
+# Project 1 Makefile v.3.0.1
 # Downloads dependecies and compiles source code
 
 # When adding a new library:
@@ -40,10 +40,12 @@ $(LIB)/guidanoli/lwctl:
 
 # -------------------
 
-clean:
+cleanlib:
 	rm -f -r -d $(LIB)
+
+clean:
 	for dir in $(ALLSUBDIRS); do \
 	$(MAKE) -C $$dir clean; \
 	done > /dev/null
 
-.PHONY: all clean dependecies bin tests
+.PHONY: all clean cleanlib dependecies bin tests
