@@ -1,16 +1,13 @@
 # Makefile
 # Compiling and linking tests
-# v.1.2.0
-
-# When adding a new library:
-# - On this Makefile
-# 	Add its name on LIBNAMES
+# v.1.3.0
 
 ####################################
 LIBNAMES = lwct
 ####################################
 CC = gcc
-LIBDIRS = $(wildcard ../lib/*)
+LIBUSERDIRS = $(wildcard ../lib/*)
+LIBDIRS = $(foreach dir, $(LIBUSERDIRS), $(wildcard $(dir)/*))
 IPATH = $(addsuffix /include, $(LIBDIRS))
 LPATH = $(addsuffix /lib, $(LIBDIRS))
 SRCPATH = ../src

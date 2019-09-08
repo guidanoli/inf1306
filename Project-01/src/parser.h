@@ -1,5 +1,5 @@
 /*
- * parser.h, v.0.3
+ * parser.h, v.1.0
  *
  * GVRP instance file parser
  */
@@ -8,36 +8,42 @@
 #define _PARSER_H_
 
 /*
- * Instance information
+ * Instance data
  * @ name               - instance name
- * @ nodes              - customer nodes info
- * @ node_cnt           - node count
+ * @ customers          - customer nodes info
+ * @ depot              - depot node info
+ * @ customer_cnt       - node count
  * @ vehicle_cnt        - vehicle count
  * @ set_cnt            - set count
  * @ max_cap            - maximum vehicle capacity
  */
 struct instance_t {
         char *name;
-        struct node_t *nodes;
-        unsigned int node_cnt;
+        struct customer_t *customers;
+        struct node_t *depot;
+        unsigned int customer_cnt;
         unsigned int vehicle_cnt;
         unsigned int set_cnt;
         unsigned int max_cap;
 };
 
 /*
- * Customer node information
- * @ x          - x coordinate
- * @ y          - y coordinate
- * @ dist       - distance from depot
- * @ set        - which set the node belong to
- *
- * Note that dist is zero for depot
+ * Node data
+ * @ x  - x coordinate
+ * @ y  - y coordinate
  */
 struct node_t {
         int x;
         int y;
-        unsigned int dist;
+};
+
+/*
+ * Customer data
+ * @ node       - node data
+ * @ set        - set identifier
+ */
+struct customer_t {
+        struct node_t *node;
         unsigned int set;
 };
 

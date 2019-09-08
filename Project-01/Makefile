@@ -1,22 +1,22 @@
-# Project 1 Makefile v.2.0.0
+# Project 1 Makefile v.3.0.0
 # Downloads dependecies and compiles source code
 
 # When adding a new library:
-# Add repo name to LIBNAMES
-# Add target with same name to:
-#	- clone repo
-#	- compile source code
+# Add repo name to LIBNAMES as USERNAME/REPONAME
+# Add a target of same name preceded by $(LIB)/ to download and compile it
 # Assumes that every repo contains:
-# 	- lib for .so
-# 	- include for .h
+# 	- folder './lib' for .so
+# 	- folder './include' for .h
 #	(if not, make sure it does!)
 
 ALLSUBDIRS = $(dir $(wildcard */Makefile))
 LIB = lib
 TESTS = tests
 SRC = src
-LIBNAMES = lwctl
+LIBNAMES = guidanoli/lwctl
 LIBPATHS = $(addprefix $(LIB)/, $(LIBNAMES))
+
+gitclone = git clone $(patsubst $(LIB)%,https://github.com%,$(1)).git $(1)
 
 all: dependecies bin tests
 
@@ -31,11 +31,14 @@ bin:
 tests:
 	$(MAKE) -C $(TESTS) > /dev/null
 
-$(LIB)/%: %
+# Dependecies targets
+# ----------- -------
 
-lwctl:
-	git clone https://github.com/guidanoli/$@.git $(LIB)/$@
-	$(MAKE) -C $(LIB)/$@
+$(LIB)/guidanoli/lwctl:
+	$(call gitclone, $@)
+	$(MAKE) -C $@
+
+# -------------------
 
 clean:
 	rm -f -r -d $(LIB)

@@ -1,5 +1,5 @@
 /*
- * t.parser.c, v.0.2
+ * t.parser.c, v.0.3
  *
  * Parser test
  */
@@ -10,10 +10,16 @@
 void dump_instance_info(struct instance_t *instance)
 {
         printf("Name: %s\n", instance->name);
-        printf("#Nodes: %u\n", instance->node_cnt);
+        printf("#Customers: %u\n", instance->customer_cnt);
         printf("#Vehicles: %u\n", instance->vehicle_cnt);
         printf("#Sets: %u\n", instance->set_cnt);
         printf("Capacity: %u\n", instance->max_cap);
+        printf("Depot: (x=%u, y=%u)\n", instance->depot->x, instance->depot->y);
+        for (unsigned int i = 0; i < instance->customer_cnt; i++) {
+                printf("Customer #%u: (x=%u, y=%u)\n", i+1,
+                        instance->customers[i].node->x,
+                        instance->customers[i].node->y);
+        }
 }
 
 void testParser(lwct_state *S)
