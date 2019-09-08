@@ -10,20 +10,22 @@
 /*
  * Instance data
  * @ name               - instance name
- * @ customers          - customer nodes info
  * @ depot              - depot node info
- * @ customer_cnt       - node count
+ * @ customers          - customer nodes info
+ * @ sets               - sets info
+ * @ customer_cnt       - customer count
  * @ vehicle_cnt        - vehicle count
  * @ set_cnt            - set count
  * @ max_cap            - maximum vehicle capacity
  */
 struct instance_t {
         char *name;
-        struct customer_t *customers;
         struct node_t *depot;
+        struct customer_t *customers;
+        struct set_t *sets;
         unsigned int customer_cnt;
-        unsigned int vehicle_cnt;
         unsigned int set_cnt;
+        unsigned int vehicle_cnt;
         unsigned int max_cap;
 };
 
@@ -41,10 +43,26 @@ struct node_t {
  * Customer data
  * @ node       - node data
  * @ set        - set identifier
+ * @ id         - customer identification
  */
 struct customer_t {
         struct node_t *node;
-        unsigned int set;
+        struct set_t *set;
+        unsigned int id;
+};
+
+/*
+ * Set data
+ * @ customers          - customers contained in the set
+ * @ customer_cnt       - number of customers in the set
+ * @ demand             - set demand
+ * @ id                 - set identification
+ */
+struct set_t {
+        struct customer_t **customers;
+        unsigned int customer_cnt;
+        unsigned int demand;
+        unsigned int id;
 };
 
 /*

@@ -1,5 +1,5 @@
 /*
- * parser.c, v.1.0.0
+ * parser.c, v.1.1.0
  *
  * GVRP instance file parser
  */
@@ -10,13 +10,26 @@
 #include "parser.h"
 
 #define BUFFER_SIZE 128
-#define ABORT_PARSE(instance) do { printf("LINE OF ABORTION = %d\n",__LINE__); \
-        free(instance); \
+
+/*
+ * ABORT_PARSE is a handy macro that does mainly three things:
+ * - Prints the line in code it aborted (for debugging purposes)
+ * - Frees pointers to structures allocated within parser
+ * - Returns NULL (to interrupt parsing)
+ */
+#define ABORT_PARSE(...) do { printf("LINE OF ABORTION = %d\n",__LINE__); \
+        void *pta[] = {__VA_ARGS__}; \
+        for (int i = 0; i < sizeof(pta)/sizeof(void*); i++) \
+        { \
+            free(pta[i]); \
+        } \
         return NULL; \
 } while(0)
 
 static struct node_t *parse_depot(unsigned int index);
 static struct customer_t *parse_customers(unsigned int customer_cnt);
+static struct set_t *parse_sets(struct customer_t * customers,
+                        unsigned int customer_cnt, unsigned int set_cnt);
 
 struct instance_t *parse_gvrp_instance()
 {
@@ -50,7 +63,8 @@ struct instance_t *parse_gvrp_instance()
                 ABORT_PARSE(instance);
         instance->max_cap = uint;
 
-        if (scanf("EDGE_WEIGHT_TYPE : %s ", buf) != 1 || strcmp(buf, "EUC_2D") != 0)
+        if (scanf("EDGE_WEIGHT_TYPE : %s ", buf) != 1
+                                                || strcmp(buf, "EUC_2D") != 0)
                 ABORT_PARSE(instance);
 
         if (scanf("%s ", buf) != 1 || strcmp(buf, "NODE_COORD_SECTION") != 0)
@@ -63,8 +77,17 @@ struct instance_t *parse_gvrp_instance()
 
         struct customer_t *customers = parse_customers(instance->customer_cnt);
         if (!customers)
-                ABORT_PARSE(instance);
+                ABORT_PARSE(instance, depot);
         instance->customers = customers;
+
+        if (scanf("%s ", buf) != 1 || strcmp(buf, "GVRP_SET_SECTION") != 0)
+                ABORT_PARSE(instance, depot, customers);
+
+        struct set_t *sets = parse_sets(instance->customers,
+                                instance->customer_cnt, instance->set_cnt);
+        if (!sets)
+                ABORT_PARSE(instance, depot, customers);
+        instance->sets = sets;
 
         return instance;
 }
@@ -87,19 +110,67 @@ struct node_t *parse_depot(unsigned int index)
 
 struct customer_t *parse_customers(unsigned int customer_cnt)
 {
-        struct customer_t *customers = malloc(sizeof(struct customer_t)*customer_cnt);
+        struct customer_t *customers = malloc(sizeof(struct customer_t)
+                                                                *customer_cnt);
         if (!customers)
                 return NULL;
 
         for (int i = 0; i < customer_cnt; i++) {
-                struct node_t *node = parse_depot(i+2);
+                unsigned int id = i + 2;
+                struct node_t *node = parse_depot(id);
                 if (!node) {
                         for (int j = 0; j < i; j++) free(customers[j].node);
                         ABORT_PARSE(customers);
                 }
                 customers[i].node = node;
-                customers[i].set = -1; // undefined
+                customers[i].set = NULL; // not defined yet
+                customers[i].id = i + 1;
         }
 
         return customers;
+}
+
+static struct set_t *parse_sets(struct customer_t * customers,
+                                unsigned int customer_cnt, unsigned int set_cnt)
+{
+        unsigned int uint1, uint2;
+
+        struct set_t *sets = malloc(sizeof(struct set_t)*set_cnt);
+
+        for (int i = 0; i < set_cnt; i++) {
+                 /* Set index */
+                if (scanf("%u ", &uint1) != 1 || uint1 != i + 1)
+                        ABORT_PARSE(sets);
+
+                struct set_t *current_set = &sets[uint1 - 1];
+                current_set->id = uint1;
+
+                /* Customers in the i+1-th set */
+                unsigned int customers_in_set = 0;
+                while (1) {
+                        if (scanf("%u ", &uint2) != 1)
+                                ABORT_PARSE(sets);
+                        if (uint2 == -1)
+                                break;
+                        customers[uint2 - 2].set = current_set;
+                        customers_in_set++;
+                }
+
+                /* Allocate customer array to set data structure */
+                struct customer_t **customer_lst = malloc(
+                        sizeof(struct customer_t *)*customers_in_set);
+                if (!customer_lst) {
+                        for (int j = 0; j < set_cnt; j++)
+                                if (sets[j].customers != NULL)
+                                        free(sets[j].customers);
+                        ABORT_PARSE(sets);
+                }
+                current_set->customer_cnt = customers_in_set;
+                for (int j = 0; j < customer_cnt; j++)
+                        if (customers[j].set == current_set)
+                                customer_lst[--customers_in_set] = &customers[j];
+                current_set->customers = customer_lst;
+        }
+
+        return sets;
 }
