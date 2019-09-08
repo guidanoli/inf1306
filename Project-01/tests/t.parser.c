@@ -1,5 +1,5 @@
 /*
- * t.parser.c, v.0.4
+ * t.parser.c, v.0.4.1
  *
  * Parser test
  */
@@ -36,6 +36,7 @@ void testParser(lwct_state *S)
         struct instance_t *instance = parse_gvrp_instance();
         lwct_fatal_assert(S, instance);
         dump_instance_info(instance);
+        free_gvrp_instance(instance);
 }
 
 int main(void)

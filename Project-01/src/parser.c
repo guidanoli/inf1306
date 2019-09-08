@@ -1,5 +1,5 @@
 /*
- * parser.c, v.1.2.0
+ * parser.c, v.1.3.0
  *
  * GVRP instance file parser
  */
@@ -31,6 +31,7 @@
  * in a structure array, if present, and setting it equal to NULL.
  */
 #define FREE_FIELD(p, size, field) do { \
+        if (p != NULL) break; \
         for (int j = 0; j < size; j++) \
                 if (p[j].field != NULL) { \
                         free(p[j].field); \
@@ -38,10 +39,29 @@
                 } \
 } while(0)
 
+/*
+ * Safely frees pointer, check if it is not NULL first
+ */
+#define SAFE_FREE(p) do { \
+        if (p) free(p); \
+} while(0)
+
 static struct node_t *parse_depot(unsigned int index);
 static struct customer_t *parse_customers(unsigned int customer_cnt);
 static struct set_t *parse_sets(struct customer_t * customers,
                         unsigned int customer_cnt, unsigned int set_cnt);
+
+void free_gvrp_instance(struct instance_t *instance)
+{
+        if (!instance) return;
+        FREE_FIELD(instance->sets, instance->set_cnt, customers);
+        SAFE_FREE(instance->sets);
+        SAFE_FREE(instance->name);
+        SAFE_FREE(instance->depot);
+        FREE_FIELD(instance->customers, instance->customer_cnt, node);
+        SAFE_FREE(instance->customers);
+        free(instance);
+}
 
 struct instance_t *parse_gvrp_instance()
 {
@@ -52,54 +72,67 @@ struct instance_t *parse_gvrp_instance()
         char buf[BUFFER_SIZE];
         unsigned int uint;
 
+        /* Initialise fields */
+        instance->name = NULL;
+        instance->depot = NULL;
+        instance->customers = NULL;
+        instance->sets = NULL;
+        instance->customer_cnt = 0;
+        instance->set_cnt = 0;
+        instance->vehicle_cnt = 0;
+        instance->max_cap = 0;
+
         if (scanf("NAME : %s ", buf) != 1)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
         instance->name = strdup(buf);
 
         if (scanf("COMMENT : %s ", buf) != 1 || strcmp(buf, "GVRP") != 0)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
 
         if (scanf("DIMENSION : %u ", &uint) != 1)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
         instance->customer_cnt = uint - 1;
 
         if (scanf("VEHICLES : %u ", &uint) != 1)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
         instance->vehicle_cnt = uint;
 
         if (scanf("GVRP_SETS : %u ", &uint) != 1)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
         instance->set_cnt = uint;
 
         if (scanf("CAPACITY : %u ", &uint) != 1)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
         instance->max_cap = uint;
 
         if (scanf("EDGE_WEIGHT_TYPE : %s ", buf) != 1
                                                 || strcmp(buf, "EUC_2D") != 0)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
 
         if (scanf("%s ", buf) != 1 || strcmp(buf, "NODE_COORD_SECTION") != 0)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
 
         struct node_t *depot = parse_depot(1);
         if (!depot)
-                ABORT_PARSE(instance);
+                free_gvrp_instance(instance);
         instance->depot = depot;
 
         struct customer_t *customers = parse_customers(instance->customer_cnt);
         if (!customers)
-                ABORT_PARSE(instance, depot);
+                free_gvrp_instance(instance);
         instance->customers = customers;
 
         if (scanf("%s ", buf) != 1 || strcmp(buf, "GVRP_SET_SECTION") != 0)
-                ABORT_PARSE(instance, depot, customers);
+                free_gvrp_instance(instance);
 
         struct set_t *sets = parse_sets(instance->customers,
                                 instance->customer_cnt, instance->set_cnt);
         if (!sets)
-                ABORT_PARSE(instance, depot, customers);
+                free_gvrp_instance(instance);
         instance->sets = sets;
+
+        if (scanf("%s ", buf) != 1 || strcmp(buf, "EOF") != 0)
+                free_gvrp_instance(instance);
 
         return instance;
 }

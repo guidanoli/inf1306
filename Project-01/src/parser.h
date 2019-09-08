@@ -1,5 +1,5 @@
 /*
- * parser.h, v.1.1
+ * parser.h, v.1.2.0
  *
  * GVRP instance file parser
  */
@@ -72,5 +72,11 @@ struct set_t {
  * > instance information or (void *) 0 on error
  */
 struct instance_t *parse_gvrp_instance();
+
+/*
+ * Property deallocates instance data structure
+ * and its fields, avoiding memory leak.
+ */
+void free_gvrp_instance(struct instance_t *instance);
 
 #endif
