@@ -1,5 +1,5 @@
 /*
- * parser.c, v.1.1.0
+ * parser.c, v.1.2.0
  *
  * GVRP instance file parser
  */
@@ -24,6 +24,18 @@
             free(pta[i]); \
         } \
         return NULL; \
+} while(0)
+
+/*
+ * FREE_FIELD serves the purpose of deallocating every field
+ * in a structure array, if present, and setting it equal to NULL.
+ */
+#define FREE_FIELD(p, size, field) do { \
+        for (int j = 0; j < size; j++) \
+                if (p[j].field != NULL) { \
+                        free(p[j].field); \
+                        p[j].field = NULL; \
+                } \
 } while(0)
 
 static struct node_t *parse_depot(unsigned int index);
@@ -134,13 +146,18 @@ static struct set_t *parse_sets(struct customer_t * customers,
                                 unsigned int customer_cnt, unsigned int set_cnt)
 {
         unsigned int uint1, uint2;
+        char buf[BUFFER_SIZE];
 
         struct set_t *sets = malloc(sizeof(struct set_t)*set_cnt);
+        if (!sets)
+                return NULL;
 
         for (int i = 0; i < set_cnt; i++) {
                  /* Set index */
-                if (scanf("%u ", &uint1) != 1 || uint1 != i + 1)
+                if (scanf("%u ", &uint1) != 1 || uint1 != i + 1) {
+                        FREE_FIELD(sets, set_cnt, customers);
                         ABORT_PARSE(sets);
+                }
 
                 struct set_t *current_set = &sets[uint1 - 1];
                 current_set->id = uint1;
@@ -148,8 +165,10 @@ static struct set_t *parse_sets(struct customer_t * customers,
                 /* Customers in the i+1-th set */
                 unsigned int customers_in_set = 0;
                 while (1) {
-                        if (scanf("%u ", &uint2) != 1)
+                        if (scanf("%u ", &uint2) != 1) {
+                                FREE_FIELD(sets, set_cnt, customers);
                                 ABORT_PARSE(sets);
+                        }
                         if (uint2 == -1)
                                 break;
                         customers[uint2 - 2].set = current_set;
@@ -160,9 +179,7 @@ static struct set_t *parse_sets(struct customer_t * customers,
                 struct customer_t **customer_lst = malloc(
                         sizeof(struct customer_t *)*customers_in_set);
                 if (!customer_lst) {
-                        for (int j = 0; j < set_cnt; j++)
-                                if (sets[j].customers != NULL)
-                                        free(sets[j].customers);
+                        FREE_FIELD(sets, set_cnt, customers);
                         ABORT_PARSE(sets);
                 }
                 current_set->customer_cnt = customers_in_set;
@@ -170,6 +187,28 @@ static struct set_t *parse_sets(struct customer_t * customers,
                         if (customers[j].set == current_set)
                                 customer_lst[--customers_in_set] = &customers[j];
                 current_set->customers = customer_lst;
+        }
+
+        if (scanf("%s ", buf) != 1 || strcmp(buf, "DEMAND_SECTION") != 0) {
+                FREE_FIELD(sets, set_cnt, customers);
+                ABORT_PARSE(sets);
+        }
+
+        for (int i = 0; i < set_cnt; i++) {
+                /* Set index */
+               if (scanf("%u ", &uint1) != 1 || uint1 != i + 1) {
+                       FREE_FIELD(sets, set_cnt, customers);
+                       ABORT_PARSE(sets);
+               }
+
+               struct set_t *current_set = &sets[uint1 - 1];
+
+               /* Set demand */
+               if (scanf("%u ", &uint2) != 1) {
+                       FREE_FIELD(sets, set_cnt, customers);
+                       ABORT_PARSE(sets);
+               }
+               current_set->demand = uint2;
         }
 
         return sets;

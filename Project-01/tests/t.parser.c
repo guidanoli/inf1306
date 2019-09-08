@@ -1,5 +1,5 @@
 /*
- * t.parser.c, v.0.3
+ * t.parser.c, v.0.4
  *
  * Parser test
  */
@@ -14,16 +14,17 @@ void dump_instance_info(struct instance_t *instance)
         printf("#Vehicles: %u\n", instance->vehicle_cnt);
         printf("#Sets: %u\n", instance->set_cnt);
         printf("Capacity: %u\n", instance->max_cap);
-        printf("Depot: (x=%u, y=%u)\n", instance->depot->x, instance->depot->y);
+        printf("Depot: (x=%d, y=%d)\n", instance->depot->x, instance->depot->y);
         for (unsigned int i = 0; i < instance->customer_cnt; i++) {
-                printf("Customer #%u: (x=%u, y=%u) Set %u\n", i+1,
+                printf("Customer #%u: (x=%d, y=%d) Set %u\n", i+1,
                         instance->customers[i].node->x,
-                        instance->customers[i].node->y
-                        ,instance->customers[i].set->id
+                        instance->customers[i].node->y,
+                        instance->customers[i].set->id
                 );
         }
         for (unsigned int i = 0; i < instance->set_cnt; i++) {
-                printf("Set #%u - ", instance->sets[i].id);
+                printf("Set #%u - Demand %u - ", instance->sets[i].id,
+                                                instance->sets[i].demand);
                 for (unsigned int j = 0; j < instance->sets[i].customer_cnt; j++)
                         printf("%u ", instance->sets[i].customers[j]->id);
                 printf("(%u)\n", instance->sets[i].customer_cnt);

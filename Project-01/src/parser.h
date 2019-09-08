@@ -1,5 +1,5 @@
 /*
- * parser.h, v.1.0
+ * parser.h, v.1.1
  *
  * GVRP instance file parser
  */
