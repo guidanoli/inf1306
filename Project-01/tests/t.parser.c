@@ -1,9 +1,10 @@
 /*
- * t.parser.c, v.0.4.1
+ * t.parser.c, v.0.4.2
  *
  * Parser test
  */
 
+#include <stdio.h>
 #include "parser.h"
 #include "lwct.h"
 

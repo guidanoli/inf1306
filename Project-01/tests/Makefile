@@ -1,6 +1,6 @@
 # Makefile
 # Compiling and linking tests
-# v.1.3.0
+# v.1.3.1
 
 ####################################
 LIBNAMES = lwct
@@ -23,6 +23,9 @@ all: $(OUT)
 
 %.o: %.c
 	$(CC) -c $< $(COMPILEFLAGS)
+
+utils.out: $(SRCPATH)/utils.o $(SRCPATH)/parser.o t.utils.o
+	$(CC) -o $@ $^ $(LINKFLAGS) -lm
 
 %.out: $(SRCPATH)/%.o t.%.o
 	$(CC) -o $@ $^ $(LINKFLAGS)

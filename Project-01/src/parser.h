@@ -1,11 +1,11 @@
 /*
- * parser.h, v.1.2.0
+ * parser.h, v.1.2.1
  *
  * GVRP instance file parser
  */
 
-#ifndef _PARSER_H_
-#define _PARSER_H_
+#ifndef _GVRP_PARSER_H_
+#define _GVRP_PARSER_H_
 
 /*
  * Instance data
