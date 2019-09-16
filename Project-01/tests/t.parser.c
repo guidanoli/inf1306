@@ -35,9 +35,9 @@ void dump_instance_info(struct instance_t *instance)
 void testParser(lwct_state *S)
 {
 	struct instance_t *instance = parse_gvrp_instance();
+	lwct_submit_desconstructor(S, free_gvrp_instance, instance);
 	lwct_fatal_assert(S, instance);
 	dump_instance_info(instance);
-	free_gvrp_instance(instance);
 }
 
 int main(void)

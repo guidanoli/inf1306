@@ -12,6 +12,7 @@
 void testE2D(lwct_state *S)
 {
 	struct instance_t *instance = parse_gvrp_instance();
+	lwct_submit_desconstructor(S, free_gvrp_instance, instance);
 	lwct_fatal_assert(S, instance);
 	for (unsigned int i = 0; i < instance->customer_cnt; i++) {
 		struct node_t *inode = instance->customers[i].node;
@@ -23,7 +24,6 @@ void testE2D(lwct_state *S)
 							e2d_dist(inode, jnode));
 		}
 	}
-	free_gvrp_instance(instance);
 }
 
 int main(void)
