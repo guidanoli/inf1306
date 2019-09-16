@@ -1,5 +1,5 @@
 /*
- * utils.h, v.0.1.0
+ * utils.h, v.0.1.1
  *
  * Utility functions for GVRP
  */

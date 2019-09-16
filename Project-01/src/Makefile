@@ -1,15 +1,16 @@
-# Makefile v.1.0.0
+# Makefile v.1.0.1
 # Compiles project source files
 
 CC = gcc
-CFLAGS = -w
+INCLUDEDIR = ../include
+CFLAGS = -w -I$(INCLUDEDIR)
 SRC = $(wildcard *.c)
 OBJ = $(patsubst %.c, %.o, $(SRC))
 
 all: $(OBJ)
 
 %.o: %.c
-	$(CC) -c $<
+	$(CC) -c $< $(CFLAGS)
 
 clean:
 	rm -f *.out *.o

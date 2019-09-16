@@ -1,6 +1,6 @@
 # Makefile
 # Compiling and linking tests
-# v.1.3.1
+# v.1.3.2
 
 ####################################
 LIBNAMES = lwct
@@ -8,10 +8,11 @@ LIBNAMES = lwct
 CC = gcc
 LIBUSERDIRS = $(wildcard ../lib/*)
 LIBDIRS = $(foreach dir, $(LIBUSERDIRS), $(wildcard $(dir)/*))
+INCLUDEDIR = ../include
 IPATH = $(addsuffix /include, $(LIBDIRS))
 LPATH = $(addsuffix /lib, $(LIBDIRS))
 SRCPATH = ../src
-COMPILEFLAGS = -w $(addprefix -I, $(IPATH)) -I$(SRCPATH)
+COMPILEFLAGS = -w $(addprefix -I, $(IPATH)) -I$(INCLUDEDIR)
 RTLIBFLAG = -Wl,-R
 LINKFLAGS = -w $(addprefix -L, $(LPATH)) \
 		$(addprefix -l, $(LIBNAMES)) \
