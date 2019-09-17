@@ -1,0 +1,9 @@
+language: java
+
+sudo: false
+
+script: cd Project-01-java && mvn test -B
+
+cache:
+  directories:
+  - $HOME/.m2
