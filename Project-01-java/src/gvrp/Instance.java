@@ -5,8 +5,9 @@ import java.util.*;
 public class Instance {
 
 	String name;
-	ArrayList<Node> nodes;
-	ArrayList<Set<Node>> sets;
+	Point depot;
+	ArrayList<Customer> customers;
+	ArrayList<CustomerSet> customerSets;
 	int vehicleCount;
 	int vehicleCapacity;
 	
