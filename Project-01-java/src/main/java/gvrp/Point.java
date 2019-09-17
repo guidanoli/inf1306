@@ -17,5 +17,19 @@ public class Point {
 		int idist = (int) dist;
 		return (dist - idist) < 0.5d ? idist : idist + 1;
 	}
+
+	@Override
+	public String toString() {
+		return String.format("(%d, %d)", x, y);
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Point) {
+			Point p = (Point) o;
+			return p.x == this.x && p.y == this.y;
+		}
+		return false;
+	}
 	
 }
