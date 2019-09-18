@@ -22,6 +22,14 @@ public class Customer {
 		this.pos = pos;
 	}
 	
+	public int distanceFrom(Customer customer) {
+		return this.pos.distanceTo(customer.pos);
+	}
+	
+	public int distanceFrom(Point point) {
+		return this.pos.distanceTo(point);
+	}
+	
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof Customer) {

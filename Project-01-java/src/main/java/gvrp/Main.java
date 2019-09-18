@@ -2,6 +2,7 @@ package gvrp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.nio.file.Paths;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -13,42 +14,52 @@ import com.beust.jcommander.Parameter;
 
 public class Main {
 
-	@Parameter(names = "-input", description = "Input file")
+	@Parameter(names = "-ifile", description = "Input file")
 	String inputFilePath = null;
-	
-	@Parameter(names = "-persist", description = "Persist parsing all input files")
-	boolean persist = false;
+
+	@Parameter(names = {"-persist", "-persistant"}, description = "Persist parsing all input files")
+	boolean isPersistant = false;
 
 	@Parameter(names = "-idir", description = "Instance files directory")
 	String instanceDirPath = "./data/GVRP3";
-	
+
+	@Parameter(names = { "-v", "-verbose" }, description = "Verbosity")
+	boolean isVerbose = false;
+
 	/**
-	 * Runs the GVRP solver, printing the results to the standard output
+	 * Runs the GVRP solver according to parameters parsed in command line
+	 * 
 	 * @param args - command line arguments (see README.md)
 	 */
-	public static void main(String [] args) {
+	public static void main(String[] args) {
 		Main main = new Main();
-        JCommander.newBuilder()
-            .addObject(main)
-            .build()
-            .parse(args);
-        
-		if (main.inputFilePath == null) {
+		JCommander.newBuilder().addObject(main).build().parse(args);
+		main.run();
+	}
+
+	/**
+	 * Read instance files and run the solver/debugger, depending on the arguments
+	 * parsed to the application.
+	 */
+	public void run() {
+		if (inputFilePath == null) {
 			/* No input path provided will pop up JFileChooser */
-			File instanceFile = promptForFolder(main.instanceDirPath);
-			if (!solveInstance(instanceFile)) return;
+			File instanceFile = promptForFolder();
+			if (!solveInstance(instanceFile))
+				return;
 		} else {
 			/* Parse input file */
-			File inputFile = new File(main.inputFilePath);
+			File inputFile = new File(inputFilePath);
 			Scanner sc = null;
 			try {
 				sc = new Scanner(inputFile);
-				while (sc.hasNext()) {
-					String instanceFilePath = sc.next();
+				while (sc.hasNextLine()) {
+					String instanceFilePath = Paths.get(instanceDirPath, sc.nextLine()).toString();
 					File instanceFile = new File(instanceFilePath);
 					if (!solveInstance(instanceFile)) {
 						/* -persist will continue parsing */
-						if (!main.persist) break;
+						if (!isPersistant)
+							break;
 					}
 				}
 				sc.close();
@@ -61,18 +72,18 @@ public class Main {
 
 	/**
 	 * Solves GVRP instance
+	 * 
 	 * @param instanceFile - file with instance data
-	 * @return {@code true} if no errors occurred,
-	 * {@code false} otherwise
+	 * @return {@code true} if no errors occurred, {@code false} otherwise
 	 */
-	public static boolean solveInstance(File instanceFile) {
+	public boolean solveInstance(File instanceFile) {
 		/* Null file is always invalid */
 		if (instanceFile == null) {
 			return false;
 		}
-		
+
 		System.out.println(instanceFile);
-		
+
 		/* Try to create Scanner object */
 		Scanner sc = null;
 		try {
@@ -81,7 +92,7 @@ public class Main {
 			e.printStackTrace();
 			return false;
 		}
-		
+
 		/* Try to parse instance file */
 		Instance instance = null;
 		try {
@@ -96,25 +107,25 @@ public class Main {
 			e.printStackTrace();
 			return false;
 		}
-		
-		System.out.println(instance);
+
+		if (isVerbose)
+			System.out.println(instance);
+
 		return true;
 	}
-	
-	public static File promptForFolder(String defaultPath)
-	{
-	    JFileChooser fc = new JFileChooser();
-	    fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-	    /* Does not work for JAR -- will start at user home */
-	    fc.setCurrentDirectory(new File(defaultPath));
-	    fc.setFileFilter(new FileNameExtensionFilter("GVRP instance", "gvrp"));
 
-	    if(fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION)
-	    {
-	        return fc.getSelectedFile();
-	    }
+	public File promptForFolder() {
+		JFileChooser fc = new JFileChooser();
+		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		/* Does not work for JAR -- will start at user home */
+		fc.setCurrentDirectory(new File(instanceDirPath));
+		fc.setFileFilter(new FileNameExtensionFilter("GVRP instance", "gvrp"));
 
-	    return null;
+		if (fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+			return fc.getSelectedFile();
+		}
+
+		return null;
 	}
-	
+
 }

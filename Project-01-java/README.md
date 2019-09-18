@@ -12,6 +12,8 @@ The executable jar offers many useful flags for command line tasks. You can run 
 
 | Flag     | Arguments | Description |
 |----------|-----------|-------------|
-| -input   | path      | Input file with all instance file paths (auto) |
+| -verbose |           | Allow verbose output (both) |
+| -v       |           | Shortcut for -verbose |
+| -idir    | path      | Instance files directory (both) |
+| -ifile   | path      | Input file with all instance file paths (auto) |
 | -persist |           | Do not stop parsing instance files if an error occurrs (auto) |
-| -idir    | path      | Instance files directory (manual) |
