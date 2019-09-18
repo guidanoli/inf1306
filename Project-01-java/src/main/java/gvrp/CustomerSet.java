@@ -8,7 +8,11 @@ public class CustomerSet extends HashSet<Customer> {
 	int demand;
 	int id;
 	
-	public CustomerSet(int demand) {
+	public CustomerSet(int id) {
+		this.id = id;
+	}
+	
+	public void setDemand(int demand) {
 		this.demand = demand;
 	}
 	
@@ -16,6 +20,7 @@ public class CustomerSet extends HashSet<Customer> {
 		return demand;
 	}
 	
+	@Override
 	public boolean add(Customer e) {
 		boolean added = super.add(e);
 		if (added) {
@@ -35,11 +40,7 @@ public class CustomerSet extends HashSet<Customer> {
 
 	@Override
 	public String toString() {
-		StringJoiner sj = new StringJoiner("\n");
-		for (Customer customer : this) {
-			sj.add(customer.toString());
-		}
-		return String.format("Set #%d:\n%s", id, sj.toString());
+		return String.format("S[%d] = { demand = %d, customers = %s }", id, demand, super.toString());
 	}
 	
 }

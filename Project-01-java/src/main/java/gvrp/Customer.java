@@ -2,40 +2,11 @@ package gvrp;
 
 public class Customer {
 
-	public static class Builder {
-	
-		CustomerSet set;
-		Point pos;
-		int id;
-		
-		public Builder customerSet(CustomerSet set) {
-			this.set = set;
-			return this;
-		}
-		
-		public Builder position(Point pos) {
-			this.pos = pos;
-			return this;
-		}
-		
-		public Builder id(int id) {
-			this.id = id;
-			return this;
-		}
-		
-		public Customer build() {
-			return new Customer(set, pos, id);
-		}
-		
-	}
-	
 	CustomerSet set;
 	Point pos;
 	int id;
-
-	public Customer(CustomerSet set, Point pos, int id) {
-		this.set = set;
-		this.pos = pos;
+	
+	public Customer(int id) {
 		this.id = id;
 	}
 	
@@ -45,6 +16,10 @@ public class Customer {
 	
 	public void setSet(CustomerSet set) {
 		this.set = set;
+	}
+	
+	public void setPosition(Point pos) {
+		this.pos = pos;
 	}
 	
 	@Override
@@ -63,7 +38,7 @@ public class Customer {
 	
 	@Override
 	public String toString() {
-		return String.format("Customer #%d from Set #%d and Position %s", id, set.id, pos.toString());
+		return String.format("C%d = %s", id, pos.toString());
 	}
 	
 }
