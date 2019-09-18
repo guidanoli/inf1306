@@ -18,6 +18,9 @@ public class Main {
 	
 	@Parameter(names = "-persist", description = "Persist parsing all input files")
 	boolean persist = false;
+
+	@Parameter(names = "-idir", description = "Instance files directory")
+	String instanceDirPath = "./data/GVRP3";
 	
 	/**
 	 * Runs the GVRP solver, printing the results to the standard output
@@ -32,7 +35,7 @@ public class Main {
         
 		if (main.inputFilePath == null) {
 			/* No input path provided will pop up JFileChooser */
-			File instanceFile = promptForFolder();
+			File instanceFile = promptForFolder(main.instanceDirPath);
 			if (!solveInstance(instanceFile)) return;
 		} else {
 			/* Parse input file */
@@ -98,12 +101,12 @@ public class Main {
 		return true;
 	}
 	
-	public static File promptForFolder()
+	public static File promptForFolder(String defaultPath)
 	{
 	    JFileChooser fc = new JFileChooser();
 	    fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
 	    /* Does not work for JAR -- will start at user home */
-	    fc.setCurrentDirectory(new File("./data/GVRP3"));
+	    fc.setCurrentDirectory(new File(defaultPath));
 	    fc.setFileFilter(new FileNameExtensionFilter("GVRP instance", "gvrp"));
 
 	    if(fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION)
