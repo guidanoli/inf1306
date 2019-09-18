@@ -22,40 +22,58 @@ public class Main {
 	 */
 	public static void main(String [] args) {
 		if (args.length == 0) {
-			
 			File instanceFile = promptForFolder();
-			System.out.println(instanceFile);
-			
-			Scanner sc = null;
-			
-			try {
-				sc = new Scanner(instanceFile);
-			} catch (FileNotFoundException e) {
-				e.printStackTrace();
-				return;
-			}
-			
-			Instance instance = null;
-			
-			try {
-				instance = Instance.parse(sc);
-			} catch (NoSuchElementException nsee) {
-				nsee.printStackTrace();
-				return;
-			} catch (IllegalStateException ilse) {
-				ilse.printStackTrace();
-				return;
-			} catch (Exception e) {
-				e.printStackTrace();
-				return;
-			}
-			
-			System.out.println(instance);
+			if (!solveInstance(instanceFile)) return;
 		} else {
-			// TODO: for N files provided by args
+			for (String arg : args) {
+				File instanceFile = new File(arg);
+				if (!solveInstance(instanceFile)) return;
+			}
 		}
 	}
 
+	/**
+	 * Solves GVRP instance
+	 * @param instanceFile - file with instance data
+	 * @return {@code true} if no errors occurred,
+	 * {@code false} otherwise
+	 */
+	public static boolean solveInstance(File instanceFile) {
+		/* Null file is always invalid */
+		if (instanceFile == null) {
+			return false;
+		}
+		
+		System.out.println(instanceFile);
+		
+		/* Try to create Scanner object */
+		Scanner sc = null;
+		try {
+			sc = new Scanner(instanceFile);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		/* Try to parse instance file */
+		Instance instance = null;
+		try {
+			instance = Instance.parse(sc);
+		} catch (NoSuchElementException nsee) {
+			nsee.printStackTrace();
+			return false;
+		} catch (IllegalStateException ilse) {
+			ilse.printStackTrace();
+			return false;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		System.out.println(instance);
+		return true;
+	}
+	
 	public static File promptForFolder()
 	{
 	    JFileChooser fc = new JFileChooser();

@@ -16,10 +16,10 @@ public class Instance {
 	 */
 	public static class Builder {
 		
-		String name = null;
+		String instanceName = null;
 		ArrayList<CustomerSet> customerSets = new ArrayList<CustomerSet>();
 		ArrayList<Customer> customers = new ArrayList<Customer>();
-		int vehicleCount = 0;
+		int fleetSize = 0;
 		int vehicleCapacity = 0;
 		
 		/**
@@ -33,7 +33,7 @@ public class Instance {
 		 * @return builder
 		 */
 		public Builder name(String name) {
-			this.name = name;
+			this.instanceName = name;
 			return this;
 		}
 				
@@ -42,8 +42,8 @@ public class Instance {
 		 * @param count - vehicle count
 		 * @return builder
 		 */
-		public Builder vehicleCount(int count) {
-			this.vehicleCount = count;
+		public Builder fleetSize(int count) {
+			this.fleetSize = count;
 			return this;
 		}
 		
@@ -132,25 +132,41 @@ public class Instance {
 					break;
 				}
 			}
-			return new Instance(name, depot, customerSets, vehicleCount, vehicleCapacity);
+			return new Instance(instanceName, depot, customerSets, fleetSize, vehicleCapacity);
 		}
 		
 	}
 	
 	String name;
 	Point depot;
-	ArrayList<CustomerSet> customerSets;
-	int vehicleCount;
-	int vehicleCapacity;
+	ArrayList<CustomerSet> sets;
+	int fleet;
+	int capacity;
 	
+	/**
+	 * Instance constructor
+	 * @param name - instance name
+	 * @param depot - depot
+	 * @param sets - customer sets
+	 * @param vCount - vehicle count
+	 * @param vCap - vehicle capacity
+	 */
 	public Instance(String name, Point depot, ArrayList<CustomerSet> sets, int vCount, int vCap) {
 		this.name = name;
 		this.depot = depot;
-		this.customerSets = sets;
-		this.vehicleCount = vCount;
-		this.vehicleCapacity = vCap;
+		this.sets = sets;
+		this.fleet = vCount;
+		this.capacity = vCap;
 	}
 	
+	/**
+	 * Parse instance data from scanner
+	 * @param sc - scanner
+	 * @return instance object
+	 * @throws NoSuchElementException
+	 * @throws IllegalStateException
+	 * @throws InputMismatchException
+	 */
 	public static Instance parse(Scanner sc) throws NoSuchElementException, IllegalStateException, InputMismatchException {
 		Builder builder = new Builder();
 		Pattern colons = Pattern.compile(":");
@@ -171,7 +187,7 @@ public class Instance {
 		if (vCount <= 0) {
 			throw new IllegalStateException("Vehicle count must be a positive number");
 		}
-		builder.vehicleCount(vCount);
+		builder.fleetSize(vCount);
 		sc.next("GVRP_SETS"); sc.next(colons);
 		/* Set count */
 		int setCount = sc.nextInt();
@@ -187,6 +203,7 @@ public class Instance {
 		}
 		builder.vehicleCapacity(vCap);
 		sc.next("EDGE_WEIGHT_TYPE"); sc.next(colons); sc.next("EUC_2D");
+		/* Customer positions */
 		sc.next("NODE_COORD_SECTION");
 		for (int i = 0; i < dimension; i++) {
 			int id = sc.nextInt();
@@ -194,6 +211,7 @@ public class Instance {
 			int y = sc.nextInt();
 			builder.customerPosition(id, x, y);
 		}
+		/* Customer sets */
 		sc.next("GVRP_SET_SECTION");
 		for (int i = 0; i < setCount; i++) {
 			int setId = sc.nextInt();
@@ -203,12 +221,14 @@ public class Instance {
 				customerId = sc.nextInt();
 			}
 		}
+		/* Customer sets demands */
 		sc.next("DEMAND_SECTION");
 		for (int i = 0; i < setCount; i++) {
 			int setId = sc.nextInt();
 			int demand = sc.nextInt();
 			builder.customerSetDemand(setId, demand);
 		}
+		/* Build instance */
 		return builder.build();
 	}
 	
@@ -216,11 +236,12 @@ public class Instance {
 	public String toString() {
 		StringJoiner sj = new StringJoiner("\n");
 		sj.add("name = " + name);
-		sj.add("#vehicles = " + vehicleCount);
-		sj.add("capacity = " + vehicleCapacity);
+		sj.add("fleet = " + fleet);
+		sj.add("capacity = " + capacity);
+		sj.add("depot = " + depot);
 		sj.add("sets = ");
-		if (customerSets != null) {
-			for (CustomerSet set : customerSets)
+		if (sets != null) {
+			for (CustomerSet set : sets)
 				sj.add(set.toString());
 		} else {
 			sj.add("null");
