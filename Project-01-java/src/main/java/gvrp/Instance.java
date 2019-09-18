@@ -115,7 +115,6 @@ public class Instance {
 		public Builder customerSet(int customerId, int setId) {
 			Customer targetCustomer = customers.get(customerId - 1);
 			CustomerSet targetSet = customerSets.get(setId - 1);
-			targetCustomer.set = targetSet;
 			targetSet.add(targetCustomer);
 			return this;
 		}

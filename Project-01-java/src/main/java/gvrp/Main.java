@@ -5,29 +5,53 @@ import java.io.FileNotFoundException;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
-import javax.swing.*;
+import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 
 public class Main {
 
+	@Parameter(names = "-input", description = "Input file")
+	String inputFilePath = null;
+	
+	@Parameter(names = "-persist", description = "Persist parsing all input files")
+	boolean persist = false;
+	
 	/**
 	 * Runs the GVRP solver, printing the results to the standard output
-	 * @param args
-	 * <ul>
-	 * <li>if none, requests one instance file through {@link JFileChooser}
-	 * and runs the solver for this instance only</li>
-	 * <li>else, runs the solver for each instance file path provided
-	 * being all arguments file paths</li>
-	 * </ul>
+	 * @param args - command line arguments (see README.md)
 	 */
 	public static void main(String [] args) {
-		if (args.length == 0) {
+		Main main = new Main();
+        JCommander.newBuilder()
+            .addObject(main)
+            .build()
+            .parse(args);
+        
+		if (main.inputFilePath == null) {
+			/* No input path provided will pop up JFileChooser */
 			File instanceFile = promptForFolder();
 			if (!solveInstance(instanceFile)) return;
 		} else {
-			for (String arg : args) {
-				File instanceFile = new File(arg);
-				if (!solveInstance(instanceFile)) return;
+			/* Parse input file */
+			File inputFile = new File(main.inputFilePath);
+			Scanner sc = null;
+			try {
+				sc = new Scanner(inputFile);
+				while (sc.hasNext()) {
+					String instanceFilePath = sc.next();
+					File instanceFile = new File(instanceFilePath);
+					if (!solveInstance(instanceFile)) {
+						/* -persist will continue parsing */
+						if (!main.persist) break;
+					}
+				}
+				sc.close();
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+				return;
 			}
 		}
 	}
@@ -78,7 +102,8 @@ public class Main {
 	{
 	    JFileChooser fc = new JFileChooser();
 	    fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-	    fc.setCurrentDirectory(new java.io.File("./data/GVRP3"));
+	    /* Does not work for JAR -- will start at user home */
+	    fc.setCurrentDirectory(new File("./data/GVRP3"));
 	    fc.setFileFilter(new FileNameExtensionFilter("GVRP instance", "gvrp"));
 
 	    if(fc.showOpenDialog(null) == JFileChooser.APPROVE_OPTION)

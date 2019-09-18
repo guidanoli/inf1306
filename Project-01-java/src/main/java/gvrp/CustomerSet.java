@@ -40,7 +40,7 @@ public class CustomerSet extends HashSet<Customer> {
 
 	@Override
 	public String toString() {
-		return String.format("S[%d] = { demand = %d, customers = %s }", id, demand, super.toString());
+		return String.format("S%d = { demand = %d, customers = %s }", id, demand, super.toString());
 	}
 	
 }
