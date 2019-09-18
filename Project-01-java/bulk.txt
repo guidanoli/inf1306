@@ -1,0 +1,5 @@
+data/GVRP3/G-n262-k25-C88-V9.gvrp
+data/GVRP3/M-n200-k16-C67-V6.gvrp
+data/GVRP3/B-n78-k10-C26-V4.gvrp
+data/GVRP3/A-n80-k10-C27-V4.gvrp
+data/GVRP3/P-n76-k5-C26-V2.gvrp
