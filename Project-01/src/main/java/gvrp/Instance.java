@@ -17,7 +17,7 @@ public class Instance {
 	public static class Builder {
 		
 		String instanceName = null;
-		ArrayList<CustomerSet> customerSets = new ArrayList<CustomerSet>();
+		ArrayList<CustomerSet.Builder> customerSetsBuilders = new ArrayList<CustomerSet.Builder>();
 		ArrayList<Customer> customers = new ArrayList<Customer>();
 		int fleetSize = 0;
 		int vehicleCapacity = 0;
@@ -89,8 +89,8 @@ public class Instance {
 		 * @return builder
 		 */
 		public Builder customerSetDemand(int setId, int demand) {
-			CustomerSet targetSet = customerSets.get(setId - 1);
-			targetSet.setDemand(demand);
+			CustomerSet.Builder targetSetBuilder = customerSetsBuilders.get(setId - 1);
+			targetSetBuilder.demand(demand);
 			return this;
 		}
 		
@@ -100,8 +100,8 @@ public class Instance {
 		 * @return builder
 		 */
 		public Builder customerSetCount(int count) {
-			for (int i = 0; i < count; i++) {
-				this.customerSets.add(new CustomerSet(i+1));
+			for (int i = 1; i <= count; i++) {
+				this.customerSetsBuilders.add(new CustomerSet.Builder().id(i));
 			}
 			return this;
 		}
@@ -114,8 +114,8 @@ public class Instance {
 		 */
 		public Builder customerSet(int customerId, int setId) {
 			Customer targetCustomer = customers.get(customerId - 1);
-			CustomerSet targetSet = customerSets.get(setId - 1);
-			targetSet.add(targetCustomer);
+			CustomerSet.Builder targetSetBuilder = customerSetsBuilders.get(setId - 1);
+			targetSetBuilder.addCustomer(targetCustomer);
 			return this;
 		}
 		
@@ -131,17 +131,67 @@ public class Instance {
 					break;
 				}
 			}
-			return new Instance(instanceName, depot, customerSets, fleetSize, vehicleCapacity);
+			int dimension = 0;
+			ArrayList<CustomerSet> customerSets = new ArrayList<CustomerSet>(customerSetsBuilders.size());
+			for (CustomerSet.Builder builder : customerSetsBuilders) {
+				CustomerSet set = builder.build();
+				dimension += set.size();
+				customerSets.add(set);
+			}
+			return new Instance(instanceName, depot, dimension, customerSets, fleetSize, vehicleCapacity);
 		}
 		
 	}
 	
-	String name;
-	Point depot;
-	ArrayList<CustomerSet> sets;
-	int fleet;
-	int capacity;
+	private String name;
+	private Point depot;
+	private ArrayList<CustomerSet> sets;
+	private int fleet;
+	private int capacity;
+	private int dimension;
 	
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return the depot
+	 */
+	public Point getDepot() {
+		return depot;
+	}
+
+	/**
+	 * @return the sets
+	 */
+	public ArrayList<CustomerSet> getSets() {
+		return sets;
+	}
+
+	/**
+	 * @return the fleet
+	 */
+	public int getFleet() {
+		return fleet;
+	}
+
+	/**
+	 * @return the capacity
+	 */
+	public int getCapacity() {
+		return capacity;
+	}
+
+	/**
+	 * @return the dimension
+	 */
+	public int getDimension() {
+		return dimension;
+	}
+
 	/**
 	 * Instance constructor
 	 * @param name - instance name
@@ -150,13 +200,16 @@ public class Instance {
 	 * @param vCount - vehicle count
 	 * @param vCap - vehicle capacity
 	 */
-	public Instance(String name, Point depot, ArrayList<CustomerSet> sets, int vCount, int vCap) {
+	private Instance(String name, Point depot, int dimension, ArrayList<CustomerSet> sets, int vCount, int vCap) {
 		this.name = name;
 		this.depot = depot;
+		this.dimension = dimension;
 		this.sets = sets;
 		this.fleet = vCount;
 		this.capacity = vCap;
 	}
+	
+	
 	
 	/**
 	 * Parse instance data from scanner

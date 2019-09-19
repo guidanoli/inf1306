@@ -5,17 +5,42 @@ import java.util.*;
 @SuppressWarnings("serial")
 public class CustomerSet extends HashSet<Customer> {
 
+	static class Builder {
+		
+		HashSet<Customer> customerSet = new HashSet<Customer>();
+		int setDemand = -1;
+		int setId = -1;
+		
+		public Builder() {}
+		public Builder addCustomer(Customer customer) {
+			customerSet.add(customer);
+			return this;
+		}
+		public Builder demand(int demand) {
+			setDemand = demand;
+			return this;
+		}
+		public Builder id(int id) {
+			setId = id;
+			return this;
+		}
+		public CustomerSet build() {
+			CustomerSet set = new CustomerSet(setId, setDemand);
+			for (Customer customer : customerSet) {
+				set.add(customer);
+			}
+			return set;
+		}
+	}
+	
 	int demand;
 	int id;
 	
-	public CustomerSet(int id) {
+	public CustomerSet(int id, int demand) {
 		this.id = id;
-	}
-	
-	public void setDemand(int demand) {
 		this.demand = demand;
 	}
-	
+		
 	public int getDemand() {
 		return demand;
 	}
