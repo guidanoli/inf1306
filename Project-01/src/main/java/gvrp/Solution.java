@@ -23,17 +23,15 @@ public class Solution extends ArrayList<Route> {
 	}
 	
 	public boolean isValid() {
-//		boolean customerInRoute = new boolean[instance]
 		HashSet<Customer> customersInRoutes = new HashSet<Customer>();
 		int customerCount = 0;
 		for (Route route : this) {
-			int routeSize = route.size();
-			if (route.getCapacity() > instance.getCapacity()) return false;
-			if (routeSize == 0) return false;
-			if (route.getCost() == 0) return false;
-			customerCount += routeSize;
+			int customersInRoute = route.size();
+			if (route.getCapacity() > instance.getCapacity()) return false; /* Route capacity surpasses maximum */
+			if (customersInRoute == 0) return false; /* Empty route */
+			customerCount += customersInRoute;
 			customersInRoutes.addAll(route);
-			if (customerCount != customersInRoutes.size()) return false;
+			if (customerCount != customersInRoutes.size()) return false; /* Overlapping customer sets */
 		}
 		return true;
 	}

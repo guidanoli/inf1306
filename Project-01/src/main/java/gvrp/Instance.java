@@ -131,25 +131,38 @@ public class Instance {
 					break;
 				}
 			}
-			int dimension = 0;
 			ArrayList<CustomerSet> customerSets = new ArrayList<CustomerSet>(customerSetsBuilders.size());
 			for (CustomerSet.Builder builder : customerSetsBuilders) {
 				CustomerSet set = builder.build();
-				dimension += set.size();
 				customerSets.add(set);
 			}
-			return new Instance(instanceName, depot, dimension, customerSets, fleetSize, vehicleCapacity);
+			return new Instance(instanceName, depot, customers, customerSets, fleetSize, vehicleCapacity);
 		}
 		
 	}
 	
 	private String name;
 	private Point depot;
+	private DistanceMatrix dmatrix;
+	private ArrayList<Customer> customers;
 	private ArrayList<CustomerSet> sets;
 	private int fleet;
 	private int capacity;
-	private int dimension;
 	
+	/**
+	 * @return the distance matrix
+	 */
+	public DistanceMatrix getDistancematrix() {
+		return dmatrix;
+	}
+
+	/**
+	 * @return the customers
+	 */
+	public ArrayList<Customer> getCustomers() {
+		return customers;
+	}
+
 	/**
 	 * @return the name
 	 */
@@ -186,13 +199,6 @@ public class Instance {
 	}
 
 	/**
-	 * @return the dimension
-	 */
-	public int getDimension() {
-		return dimension;
-	}
-
-	/**
 	 * Instance constructor
 	 * @param name - instance name
 	 * @param depot - depot
@@ -200,10 +206,10 @@ public class Instance {
 	 * @param vCount - vehicle count
 	 * @param vCap - vehicle capacity
 	 */
-	private Instance(String name, Point depot, int dimension, ArrayList<CustomerSet> sets, int vCount, int vCap) {
+	private Instance(String name, Point depot, ArrayList<Customer> customers, ArrayList<CustomerSet> sets, int vCount, int vCap) {
+		this.dmatrix = new DistanceMatrix(customers, depot);
 		this.name = name;
 		this.depot = depot;
-		this.dimension = dimension;
 		this.sets = sets;
 		this.fleet = vCount;
 		this.capacity = vCap;

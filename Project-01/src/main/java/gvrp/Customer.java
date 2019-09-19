@@ -10,6 +10,10 @@ public class Customer {
 		this.id = id;
 	}
 	
+	public int getId() {
+		return id;
+	}
+	
 	public int getDemand() {
 		return set.getDemand();
 	}

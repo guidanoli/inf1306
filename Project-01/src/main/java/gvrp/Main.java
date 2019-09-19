@@ -13,7 +13,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
 public class Main {
-
+	
 	@Parameter(names = "-ifile", description = "Input file")
 	String inputFilePath = null;
 
@@ -26,6 +26,9 @@ public class Main {
 	@Parameter(names = { "-v", "-verbose" }, description = "Verbosity")
 	boolean isVerbose = false;
 
+	@Parameter(names = "-dmatrix", description = "Display distance matrix")
+	boolean displaysDistanceMatrix = false;
+	
 	/**
 	 * Runs the GVRP solver according to parameters parsed in command line
 	 * 
@@ -111,6 +114,9 @@ public class Main {
 		if (isVerbose)
 			System.out.println(instance);
 
+		if (displaysDistanceMatrix)
+			System.out.println(instance.getDistancematrix());
+		
 		return true;
 	}
 
