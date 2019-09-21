@@ -1,0 +1,5 @@
+-idir
+data/GVRP3
+-ifile
+group.txt
+-dmatrix
