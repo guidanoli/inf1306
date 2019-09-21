@@ -10,19 +10,18 @@ public class DistanceMatrix {
 	public DistanceMatrix(ArrayList<Customer> customers, Point depot) {
 		int matrixDimension = customers.size();
 		matrix = new int[matrixDimension][matrixDimension];
-		for (int i = 0; i < matrixDimension; i++) {
-			Customer ci = customers.get(i);
+		for (Customer ci : customers) {
 			setDistanceToDepot(ci, depot);
-			for (int j = 0; j < matrixDimension; j++) {
-				setDistance(ci, customers.get(j));
+			for (Customer cj : customers) {
+				setDistance(ci, cj);
 			}
 		}
 	}
 		
-	private void setDistanceToDepot(Customer ci, Point depot) {
-		int iid = ci.getId();
-		int dist = ci.distanceFrom(depot);
-		matrix[iid][0] = matrix[0][iid] = dist;
+	private void setDistanceToDepot(Customer c, Point depot) {
+		int id = c.getId();
+		int dist = c.distanceFrom(depot);
+		matrix[id][0] = matrix[0][id] = dist;
 	}
 	
 	private void setDistance(Customer ci, Customer cj) {
@@ -36,6 +35,9 @@ public class DistanceMatrix {
 		return matrix[ci.getId()][cj.getId()];
 	}
 	
+	/**
+	 * Displays the lower half of the distance matrix
+	 */
 	@Override
 	public String toString() {
 		StringJoiner sj = new StringJoiner("\n");

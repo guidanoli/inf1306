@@ -12,22 +12,27 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import gvrp.construction.SolutionFactory;
+
 public class Main {
 	
 	@Parameter(names = "-ifile", description = "Input file")
-	String inputFilePath = null;
+	String inputFilePath = "all.txt";
 
 	@Parameter(names = {"-persist", "-persistant"}, description = "Persist parsing all input files")
 	boolean isPersistant = false;
 
 	@Parameter(names = "-idir", description = "Instance files directory")
-	String instanceDirPath = "./data/GVRP3";
+	String instanceDirPath = "data/GVRP3";
 
 	@Parameter(names = { "-v", "-verbose" }, description = "Verbosity")
 	boolean isVerbose = false;
 
 	@Parameter(names = "-dmatrix", description = "Display distance matrix")
 	boolean displaysDistanceMatrix = false;
+	
+	@Parameter(names = "-constructive", description = "Constructive metaheuristic")
+	String constructiveMetaheuristic = "greedy";
 	
 	/**
 	 * Runs the GVRP solver according to parameters parsed in command line
@@ -116,6 +121,23 @@ public class Main {
 
 		if (displaysDistanceMatrix)
 			System.out.println(instance.getDistancematrix());
+		
+		if (isVerbose)
+			System.out.println("Constructing initial solution with '" + constructiveMetaheuristic +
+					"' constructive metaheuristic");
+		
+		Solution initialSolution = SolutionFactory.construct(instance, constructiveMetaheuristic);
+		
+		if (initialSolution == null) {
+			System.out.println(String.format("'%s' is not a valid constructive metaheuristic.",
+					constructiveMetaheuristic));
+			return false;
+		}
+		
+		if (!initialSolution.isValid()) {
+			System.out.println("Initial solution is invalid.");
+			return false;
+		}
 		
 		return true;
 	}
