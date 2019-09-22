@@ -16,6 +16,9 @@ import gvrp.construction.SolutionFactory;
 
 public class Main {
 	
+	@Parameter(names = "-mode", description = "Input mode")
+	String mode = "auto";
+	
 	@Parameter(names = "-ifile", description = "Input file")
 	String inputFilePath = "all.txt";
 
@@ -70,12 +73,12 @@ public class Main {
 			e.printStackTrace();
 			return;
 		}
-		if (inputFilePath == null) {
+		if (mode.equals("manual")) {
 			/* No input path provided will pop up JFileChooser */
 			File instanceFile = promptForFolder();
 			if (!solveInstance(instanceFile))
 				return;
-		} else {
+		} else if(mode.equals("auto")) {
 			/* Parse input file */
 			File inputFile = new File(inputFilePath);
 			Scanner sc = null;
@@ -95,6 +98,8 @@ public class Main {
 				e.printStackTrace();
 				return;
 			}
+		} else {
+			System.out.println("Invalid mode '" + mode + "'");
 		}
 	}
 
