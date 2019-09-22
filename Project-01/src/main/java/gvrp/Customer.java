@@ -14,6 +14,10 @@ public class Customer {
 		return id;
 	}
 	
+	public Point getPoint() {
+		return pos;
+	}
+	
 	public CustomerSet getSet() {
 		return set;
 	}

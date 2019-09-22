@@ -13,6 +13,7 @@ public class SolutionFactory {
 	static {
 		metaheuristics = new HashMap<>();
 		metaheuristics.put("greedy", new Greedy());
+		metaheuristics.put("scan", new Scan());
 	}
 	
 	public static Solution construct(Instance instance, String algorithm) {

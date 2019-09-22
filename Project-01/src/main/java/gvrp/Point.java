@@ -32,6 +32,18 @@ public class Point {
 		return (dist - idist) < 0.5d ? idist : idist + 1;
 	}
 
+	/**
+	 * If the vector v = anotherPoint - thisPoint = (x,y),
+	 * then the angle between these points is tan(deltaY/deltaX).
+	 * @param anotherPoint - another point
+	 * @return the angle between these points
+	 */
+	public double angleFrom(Point anotherPoint) {
+		int dx = anotherPoint.x - this.x;
+		int dy = anotherPoint.y - this.y; 
+		return Math.atan2(dy, dx);
+	}
+	
 	@Override
 	public String toString() {
 		return String.format("(%d, %d)", x, y);
@@ -45,5 +57,5 @@ public class Point {
 		}
 		return false;
 	}
-	
+		
 }
