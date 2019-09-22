@@ -19,5 +19,6 @@ The executable jar offers many useful flags for command line tasks. You can run 
 | -ifile                | path      | Input file with all instance file paths (automatic mode) |
 | -iinfo                |           | Display instance information |
 | -isinfo               |           | Display initial solution information |
+| -mode                 | mode      | Input mode (auto or manual) |
 | -persist, -persistant |           | Do not stop parsing instance files if an error occurrs |
 | -verbose, -v          |           | Allow verbose output |
