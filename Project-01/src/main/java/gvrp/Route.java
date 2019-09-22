@@ -2,18 +2,19 @@ package gvrp;
 
 import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.StringJoiner;
 
 @SuppressWarnings("serial")
 public class Route extends LinkedList<Customer> {
 
 	Point depot;
 	int id;
-	int cost = 0;
-	int cap = 0;
+	int maxCap;
 	
-	public Route(int id, Point depot) {
+	public Route(int id, Point depot, int maximumCapacity) {
 		this.id = id;
 		this.depot = depot;
+		this.maxCap = maximumCapacity;
 	}
 	
 	public int getId() {
@@ -24,20 +25,6 @@ public class Route extends LinkedList<Customer> {
 	 * @return the capacity occupied by all the clients in the route
 	 */
 	public int getCapacity() {
-		return cap;
-	}
-	
-	/**
-	 * <p>Updates the route occupied capacity.
-	 * 
-	 * <p><b>Contract:</b>
-	 * Whenever an update to the route has been made, this method has to be called.
-	 */
-	public void updateCapacity() {
-		cap = calculateCapacity();
-	}
-	
-	private int calculateCapacity() {
 		int totalCap = 0;
 		for (Customer customer : this) {
 			totalCap += customer.getDemand();
@@ -48,22 +35,8 @@ public class Route extends LinkedList<Customer> {
 	/**
 	 * @return the cost of the route trajectory, starting and ending in the depot,
 	 * through all the customers in between.
-	 */
+	 */	
 	public int getCost() {
-		return cost;
-	}
-	
-	/**
-	 * <p>Updates the route occupied capacity.
-	 * 
-	 * <p><b>Contract:</b>
-	 * Whenever an update to the route has been made, this method has to be called.
-	 */
-	public void updateCost() {
-		cost = calculateCost();
-	}
-	
-	private int calculateCost() {
 		if (isEmpty()) return 0; /* No customers */
 		
 		int totalCost = 0;
@@ -82,9 +55,22 @@ public class Route extends LinkedList<Customer> {
 		return totalCost;
 	}
 	
+	
 	@Override
 	public String toString() {
-		return String.format("R%d = { cost = %d, trajectory = %s }", id, super.toString());
+		StringJoiner sj = new StringJoiner(", ");
+		for (Customer c : this) {
+			sj.add(String.format("C%d", c.getId()));
+		}
+		return String.format("R%d = { cost = %d, trajectory = [%s] }", id, getCost(), sj.toString());
+	}
+	
+	public boolean addCustomer(Customer c) {
+		int customerCost = c.getDemand();
+		if (customerCost + getCapacity() > maxCap) return false;
+		if (contains(c)) return false;
+		addLast(c);
+		return true;
 	}
 	
 }

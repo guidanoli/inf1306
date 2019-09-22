@@ -157,6 +157,13 @@ public class Instance {
 	}
 
 	/**
+	 * @return number of customers
+	 */
+	public int getNumberOfCustomers() {
+		return customers.size();
+	}
+	
+	/**
 	 * @return the customers
 	 */
 	public ArrayList<Customer> getCustomers() {
@@ -213,6 +220,7 @@ public class Instance {
 		this.sets = sets;
 		this.fleet = vCount;
 		this.capacity = vCap;
+		this.customers = customers;
 	}
 	
 	

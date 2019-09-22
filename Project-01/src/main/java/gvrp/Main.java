@@ -28,6 +28,12 @@ public class Main {
 	@Parameter(names = { "-v", "-verbose" }, description = "Verbosity")
 	boolean isVerbose = false;
 
+	@Parameter(names = {"-iinfo"}, description = "Instance information")
+	boolean instanceInfo = false;
+	
+	@Parameter(names = {"-isinfo"}, description = "Initial Solution Info")
+	boolean initialSolutionInfo = false;
+	
 	@Parameter(names = "-dmatrix", description = "Display distance matrix")
 	boolean displaysDistanceMatrix = false;
 	
@@ -116,7 +122,7 @@ public class Main {
 			return false;
 		}
 
-		if (isVerbose)
+		if (instanceInfo)
 			System.out.println(instance);
 
 		if (displaysDistanceMatrix)
@@ -133,12 +139,18 @@ public class Main {
 					constructiveMetaheuristic));
 			return false;
 		}
+
+		if (initialSolutionInfo)
+			System.out.println(initialSolution);
 		
-		if (!initialSolution.isValid()) {
+		if (!initialSolution.isValid(isVerbose)) {
 			System.out.println("Initial solution is invalid.");
 			return false;
 		}
 		
+		if (isVerbose)
+			System.out.printf("Initial cost: %d\n", initialSolution.getCost());
+				
 		return true;
 	}
 

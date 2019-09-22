@@ -2,6 +2,7 @@ package gvrp;
 
 import java.util.ArrayList;
 import java.util.StringJoiner;
+import java.util.function.Predicate;
 
 public class DistanceMatrix {
 
@@ -33,6 +34,21 @@ public class DistanceMatrix {
 	
 	public int getDistanceBetween(Customer ci, Customer cj) {
 		return matrix[ci.getId()][cj.getId()];
+	}
+	
+	public Integer getClosestNeighbourId(int customerId, Predicate<Integer> isVisited) {
+		int closestDistance = Integer.MAX_VALUE;
+		Integer closestId = null;
+		for (int i = 0; i < matrix[customerId].length; i++) {
+			if (i == customerId) continue; /* ignore itself */
+			if (isVisited.test(i)) continue; /* ignore visited */
+			int dist = matrix[customerId][i]; 
+			if (dist < closestDistance) {
+				closestId = i;
+				closestDistance = dist;
+			}
+		}
+		return closestId;
 	}
 	
 	/**
