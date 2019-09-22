@@ -25,6 +25,7 @@ public class Solution extends ArrayList<Route> {
 	
 	public boolean isValid(boolean printError) {
 		HashSet<Customer> customersInRoutes = new HashSet<Customer>();
+		HashSet<CustomerSet> customerSetInRoutes = new HashSet<CustomerSet>(); 
 		int customerCount = 0;
 		for (Route route : this) {
 			int customersInRoute = route.size();
@@ -41,6 +42,13 @@ public class Solution extends ArrayList<Route> {
 			if (customerCount != customersInRoutes.size()) {
 				if (printError) System.out.println("Overlapping customer sets");
 				return false;
+			}
+			for (Customer customer : route) {
+				CustomerSet customerSet = customer.getSet();
+				if (!customerSetInRoutes.add(customerSet)) {
+					if (printError) System.out.println("More than one customer per group in route");
+					return false;
+				}
 			}
 		}
 		return true;

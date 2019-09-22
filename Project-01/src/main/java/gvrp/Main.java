@@ -28,6 +28,9 @@ public class Main {
 	@Parameter(names = { "-v", "-verbose" }, description = "Verbosity")
 	boolean isVerbose = false;
 
+	@Parameter(names = "-bks", description = "Best Known Solution file")
+	String bksPath = "data/bks.txt";
+	
 	@Parameter(names = {"-iinfo"}, description = "Instance information")
 	boolean instanceInfo = false;
 	
@@ -39,6 +42,8 @@ public class Main {
 	
 	@Parameter(names = "-constructive", description = "Constructive metaheuristic")
 	String constructiveMetaheuristic = "greedy";
+	
+	BKS bestKnownSolutions;
 	
 	/**
 	 * Runs the GVRP solver according to parameters parsed in command line
@@ -56,6 +61,15 @@ public class Main {
 	 * parsed to the application.
 	 */
 	public void run() {
+		try {
+			File bksFile = new File(bksPath);
+			Scanner bksScanner = new Scanner(bksFile);
+			bestKnownSolutions = new BKS(bksScanner);
+			bksScanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
+		}
 		if (inputFilePath == null) {
 			/* No input path provided will pop up JFileChooser */
 			File instanceFile = promptForFolder();
@@ -148,8 +162,11 @@ public class Main {
 			return false;
 		}
 		
-		if (isVerbose)
-			System.out.printf("Initial cost: %d\n", initialSolution.getCost());
+		if (isVerbose) {
+			int cost = initialSolution.getCost();
+			double fraction = bestKnownSolutions.getBKSFraction(initialSolution);
+			System.out.printf("Initial cost: %d (%.2f%% from optimal solution)\n", cost, fraction*100);
+		}
 				
 		return true;
 	}

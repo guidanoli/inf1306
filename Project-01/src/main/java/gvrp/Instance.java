@@ -149,6 +149,10 @@ public class Instance {
 	private int fleet;
 	private int capacity;
 	
+	public int getNumberOfSets() {
+		return sets.size();
+	}
+	
 	/**
 	 * @return the distance matrix
 	 */

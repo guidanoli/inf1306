@@ -14,6 +14,10 @@ public class Customer {
 		return id;
 	}
 	
+	public CustomerSet getSet() {
+		return set;
+	}
+	
 	public int getDemand() {
 		return set.getDemand();
 	}

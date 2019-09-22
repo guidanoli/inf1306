@@ -41,6 +41,10 @@ public class CustomerSet extends HashSet<Customer> {
 		this.demand = demand;
 	}
 		
+	public int getId() {
+		return id;
+	}
+	
 	public int getDemand() {
 		return demand;
 	}
