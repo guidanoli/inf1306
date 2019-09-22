@@ -10,10 +10,14 @@ Simply run `java -jar gvrp.jar <args...>` on your preffered terminal. If no .jar
 
 The executable jar offers many useful flags for command line tasks. You can run the application **manually**, by selecting the instance file from a *JFileChooser* or **automatically**, by providing a file with all the instance file paths.
 
-| Flag     | Arguments | Description |
-|----------|-----------|-------------|
-| -verbose |           | Allow verbose output (both) |
-| -v       |           | Shortcut for -verbose |
-| -idir    | path      | Instance files directory (both) |
-| -ifile   | path      | Input file with all instance file paths (auto) |
-| -persist |           | Do not stop parsing instance files if an error occurrs (auto) |
+| Flag                  | Arguments | Description |
+|-----------------------|-----------|-------------|
+| -bks                  | path      | Best known solution file path |
+| -constructive         | name      | Constuctive metaheuristic |
+| -dmatrix              |           | Display distance matrix |
+| -idir                 | path      | Instance files directory |
+| -ifile                | path      | Input file with all instance file paths (automatic mode) |
+| -iinfo                |           | Display instance information |
+| -isinfo               |           | Display initial solution information |
+| -persist, -persistant |           | Do not stop parsing instance files if an error occurrs |
+| -verbose, -v          |           | Allow verbose output |
