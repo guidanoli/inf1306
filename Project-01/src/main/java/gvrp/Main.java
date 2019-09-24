@@ -3,12 +3,15 @@ package gvrp;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
@@ -46,8 +49,15 @@ public class Main {
 	@Parameter(names = "-constructive", description = "Constructive metaheuristic")
 	String constructiveMetaheuristic = "greedy";
 	
-	BKS bestKnownSolutions;
+	@DynamicParameter(names = "-M", description = "Get mean of certain attribute")
+	Map<String, String> meanValues = new HashMap<>();
 	
+	@Parameter(names = {"-help", "--help"}, description = "Help with application parameters", help = true)
+	boolean help = false;
+	
+	MeanValuesList meanValuesList = new MeanValuesList();
+	BKS bestKnownSolutions;
+		
 	/**
 	 * Runs the GVRP solver according to parameters parsed in command line
 	 * 
@@ -55,8 +65,24 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		Main main = new Main();
-		JCommander.newBuilder().addObject(main).build().parse(args);
+		JCommander jcommander = JCommander
+				.newBuilder()
+				.addObject(main)
+				.build();
+		jcommander.parse(args);
+		if (main.help == true) {
+			jcommander.usage();
+			return;
+		}
 		main.run();
+		if (!main.meanValuesList.isEmpty()) {
+			System.out.println("\nMean values:");
+			main.meanValuesList.forEach((k,v) -> {
+				MeanValuesLabels symbol = MeanValuesLabels.valueOf(k);
+				Double meanValue = main.meanValuesList.getMean(k);
+				System.out.println(symbol.getLabel() + "\t" + symbol.convert(meanValue));			
+			});
+		}
 	}
 
 	/**
@@ -171,6 +197,9 @@ public class Main {
 			int cost = initialSolution.getCost();
 			double fraction = bestKnownSolutions.getBKSFraction(initialSolution);
 			System.out.printf("Initial cost: %d (%.2f%% from optimal solution)\n", cost, fraction*100);
+			if (meanValues.containsKey("iscost")) {
+				meanValuesList.addValueToMean("iscost", fraction);
+			}
 		}
 				
 		return true;
