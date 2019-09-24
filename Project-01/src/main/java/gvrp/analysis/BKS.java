@@ -1,7 +1,9 @@
-package gvrp;
+package gvrp.analysis;
 
 import java.util.HashMap;
 import java.util.Scanner;
+
+import gvrp.Solution;
 
 /**
  * <p>Reads best-known solutions from file formatted as:

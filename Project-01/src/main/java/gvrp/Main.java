@@ -15,6 +15,9 @@ import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import gvrp.analysis.BKS;
+import gvrp.analysis.MeanValuesLabels;
+import gvrp.analysis.MeanValuesList;
 import gvrp.construction.SolutionFactory;
 
 public class Main {

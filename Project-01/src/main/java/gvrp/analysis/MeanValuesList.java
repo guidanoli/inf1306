@@ -1,4 +1,4 @@
-package gvrp;
+package gvrp.analysis;
 
 import java.util.ArrayList;
 import java.util.HashMap;
