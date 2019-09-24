@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.StringJoiner;
 
+import gvrp.diff.InterOpt2Star;
 import gvrp.diff.IntraOpt2;
 import gvrp.diff.IntraRelocate;
 import gvrp.diff.Move;
@@ -113,6 +114,27 @@ public class Route extends LinkedList<Customer> {
 		for (int i = 0; i < p2 - p1; i++)
 			add(p1, remove(p2)); /* flips sequence [p1,p2] */
 		return new IntraOpt2(this, p1, p2);
+	}
+	
+	/**
+	 * Flips a random sequence from two routes
+	 * @param r - another route
+	 * @param r1 - random number #1
+	 * @param r2 - random number #2
+	 * @return move
+	 */
+	public Move opt2Star(Route r, int r1, int r2) {
+		int size = size();
+		int rSize = r.size();
+		if (size < 2 || rSize < 2) return null;
+		int p = r1 % (size - 1); /* p in [0,size-1] */
+		int rP = r2 % (rSize - 1); /* rp in [0,rSize-1] */
+		/* swap tails */
+		for (int i = 0; i < rSize - 1 - rP; i++)
+			add(p + 1, r.removeLast());
+		for (int i = 0; i < size - 1 - p; i++)
+			r.add(rP + 1, removeLast());
+		return new InterOpt2Star(this, r, p, rP);
 	}
 	
 }

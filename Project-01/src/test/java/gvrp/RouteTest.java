@@ -17,9 +17,25 @@ class RouteTest {
 
 	Route route;
 	
+	Route newRoute(int id) {
+		return new Route(id, new Point(0,0), 100);
+	}
+	
+	int counter = 1;
+	
+	void buildRoute(Route baseRoute, int seed, int size) {
+		for (int i = 0; i < size; i++) {
+			Customer c = new Customer(counter);
+			c.setSet(new CustomerSet(0, seed*i*i - seed + 1));
+			c.setPosition(new Point(seed*i,-(seed+2)*i*i));
+			baseRoute.addCustomer(c);
+			counter++;
+		}
+	}
+	
 	@BeforeEach
 	void beforeEach() {
-		route = new Route(0, new Point(0,0), 100);
+		route = newRoute(0);
 	}
 	
 	@Nested
@@ -32,12 +48,7 @@ class RouteTest {
 		
 		@BeforeEach
 		void beforeEach() {
-			for (int i = 0; i < SIZE; i++) {
-				Customer c = new Customer(i+1);
-				c.setSet(new CustomerSet(0, i*i));
-				c.setPosition(new Point(5*i,-7*i*i));
-				route.addCustomer(c);
-			}
+			buildRoute(route, 5, SIZE);
 			/* clone initial route for later comparison */
 			initialRoute = new Route(route);
 			move = null;
@@ -59,7 +70,6 @@ class RouteTest {
 		
 		@AfterEach
 		void afterEach() {
-			System.out.println(route);
 			assertEquals(initialRoute.size(), route.size(),
 					() -> "should not remove or add customers");
 			assertEquals(route, route,
@@ -73,6 +83,60 @@ class RouteTest {
 					() -> "should result in a move");
 			move.undo();
 			assertEquals(initialRoute, route,
+					() -> "Move should be correctly undone");
+		}
+		
+	}
+	
+	@Nested
+	@DisplayName("the interroute manipulation methods")
+	class ExternalManipulationTest {
+		
+		Route route1, route2;
+		Route ini1, ini2;
+		final int SIZE1 = 10, SIZE2 = 2;
+		Move move;
+		
+		@BeforeEach
+		void beforeEach() {
+			route1 = newRoute(1);
+			route2 = newRoute(2);
+			buildRoute(route1, 5, SIZE1);
+			ini1 = new Route(route1);
+			buildRoute(route2, 7, SIZE2);
+			ini2 = new Route(route2);
+			move = null;
+		}
+
+		@RepeatedTest(value = SIZE1*SIZE2)
+		@DisplayName("the 2-opt-star method")
+		void test2OptStar(RepetitionInfo info) {
+			int n = info.getCurrentRepetition() - 1; 
+			move = route1.opt2Star(route2, n % SIZE1, n / SIZE1);
+		}
+		
+		@AfterEach
+		void afterEach() {
+			assertEquals(route1, route1,
+					() -> "should let it equal itself");
+			assertEquals(route2, route2,
+					() -> "should let it equal itself");
+			assertNotEquals(route1, ini1,
+					() -> "should let it differ from the initial route");
+			assertNotEquals(route2, ini2,
+					() -> "should let it differ from the initial route");
+			int summedUpSizes = route1.size() + route2.size();
+			HashSet<Customer> allCustomers = new HashSet<>(summedUpSizes);
+			allCustomers.addAll(route1);
+			allCustomers.addAll(route2);
+			assertEquals(summedUpSizes, allCustomers.size(),
+					() -> "should not have repeated customers");
+			assertNotNull(move,
+					() -> "should result in a move");
+			move.undo();
+			assertEquals(ini1, route1,
+					() -> "Move should be correctly undone");
+			assertEquals(ini2, route2,
 					() -> "Move should be correctly undone");
 		}
 		
