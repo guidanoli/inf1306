@@ -195,14 +195,14 @@ public class Main {
 			System.out.println("Initial solution is invalid.");
 			return false;
 		}
-		
+
+		int cost = initialSolution.getCost();
+		double fraction = bestKnownSolutions.getBKSFraction(initialSolution);
+		if (meanValues.containsKey("iscost")) {
+			meanValuesList.addValueToMean("iscost", fraction);
+		}
 		if (isVerbose) {
-			int cost = initialSolution.getCost();
-			double fraction = bestKnownSolutions.getBKSFraction(initialSolution);
 			System.out.printf("Initial cost: %d (%.2f%% from optimal solution)\n", cost, fraction*100);
-			if (meanValues.containsKey("iscost")) {
-				meanValuesList.addValueToMean("iscost", fraction);
-			}
 		}
 				
 		return true;
