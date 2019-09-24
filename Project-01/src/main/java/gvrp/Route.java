@@ -17,6 +17,13 @@ public class Route extends LinkedList<Customer> {
 		this.maxCap = maximumCapacity;
 	}
 	
+	public Route(Route anotherRoute) {
+		super(anotherRoute); /* Copies customers */
+		this.depot = anotherRoute.depot;
+		this.id = anotherRoute.id;
+		this.maxCap = anotherRoute.maxCap;
+	}
+	
 	public int getId() {
 		return id;
 	}
@@ -71,6 +78,33 @@ public class Route extends LinkedList<Customer> {
 		if (contains(c)) return false;
 		addLast(c);
 		return true;
+	}
+	
+	/**
+	 * Takes two random numbers and operate a random shift
+	 * @param r1 - random number #1
+	 * @param r2 - random number #2
+	 */
+	public void shift(int r1, int r2) {
+		int size = size();
+		if (size < 2) return;
+		int p1 = r1 % (size - 2); /* p1 in [0,size-2] */
+		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
+		add(p2, remove(p1)); /* 0 is in the beginning and size-1 is at the end */
+	}
+	
+	/**
+	 * Flips a random sequence within the route
+	 * @param r1 - random number #1
+	 * @param r2 - random number #2
+	 */
+	public void opt2(int r1, int r2) {
+		int size = size();
+		if (size < 2) return;
+		int p1 = r1 % (size - 2); /* p1 in [0,size-2] */
+		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
+		for (int i = 0; i < p2 - p1; i++)
+			add(p1, remove(p2)); /* flips sequence [p1,p2] */
 	}
 	
 }

@@ -2,11 +2,13 @@ package gvrp;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class PointTest {
 
 	@Test
+	@DisplayName("Two points with signals")
 	void testEquals() {
 		assertAll(
 				() -> assertEquals(new Point(4,5), new Point(4,5),
@@ -27,6 +29,7 @@ class PointTest {
 	}
 	
 	@Test
+	@DisplayName("The distance between two points")
 	void testDist() {
 		Point [] points = {
 				new Point(0,7),
@@ -38,14 +41,14 @@ class PointTest {
 			for (int j = 0; j < points.length; j++) {
 				if (i == j) {
 					assertEquals(0, points[i].distanceTo(points[i]),
-							() -> "Distance between the point and itself should be zero");
+							() -> "which are the same should be zero");
 				}
 				if (j >= i) {
 					assertEquals(points[i].distanceTo(points[j]), points[j].distanceTo(points[i]),
-							() -> "Distance should be comutative");
+							() -> "is a comutative operation");
 				}
 				assertTrue(points[i].distanceTo(points[j]) >= 0,
-						() -> "Distance between two points should never be negative");
+						() -> "should never be negative");
 			}
 		}
 	}
