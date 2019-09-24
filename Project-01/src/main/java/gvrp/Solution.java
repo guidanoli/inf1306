@@ -23,6 +23,11 @@ public class Solution extends ArrayList<Route> {
 		}
 	}
 	
+	public Solution(Solution anotherSolution) {
+		super(anotherSolution);
+		this.instance = anotherSolution.instance;
+	}
+	
 	public boolean isValid(boolean printError) {
 		HashSet<Customer> customersInRoutes = new HashSet<Customer>();
 		HashSet<CustomerSet> customerSetInRoutes = new HashSet<CustomerSet>(); 

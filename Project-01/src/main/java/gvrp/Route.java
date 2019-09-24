@@ -4,6 +4,10 @@ import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.StringJoiner;
 
+import gvrp.diff.IntraOpt2;
+import gvrp.diff.IntraRelocate;
+import gvrp.diff.Move;
+
 @SuppressWarnings("serial")
 public class Route extends LinkedList<Customer> {
 
@@ -84,27 +88,31 @@ public class Route extends LinkedList<Customer> {
 	 * Takes two random numbers and operate a random shift
 	 * @param r1 - random number #1
 	 * @param r2 - random number #2
+	 * @return move
 	 */
-	public void shift(int r1, int r2) {
+	public Move shift(int r1, int r2) {
 		int size = size();
-		if (size < 2) return;
-		int p1 = r1 % (size - 2); /* p1 in [0,size-2] */
+		if (size < 2) return null;
+		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
 		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
 		add(p2, remove(p1)); /* 0 is in the beginning and size-1 is at the end */
+		return new IntraRelocate(this, p1, p2);
 	}
 	
 	/**
 	 * Flips a random sequence within the route
 	 * @param r1 - random number #1
 	 * @param r2 - random number #2
+	 * @return move
 	 */
-	public void opt2(int r1, int r2) {
+	public Move opt2(int r1, int r2) {
 		int size = size();
-		if (size < 2) return;
-		int p1 = r1 % (size - 2); /* p1 in [0,size-2] */
+		if (size < 2) return null;
+		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
 		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
 		for (int i = 0; i < p2 - p1; i++)
 			add(p1, remove(p2)); /* flips sequence [p1,p2] */
+		return new IntraOpt2(this, p1, p2);
 	}
 	
 }

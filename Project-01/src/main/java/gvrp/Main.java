@@ -14,11 +14,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.beust.jcommander.DynamicParameter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.validators.PositiveInteger;
 
 import gvrp.analysis.BKS;
 import gvrp.analysis.MeanValuesLabels;
 import gvrp.analysis.MeanValuesList;
 import gvrp.construction.SolutionFactory;
+import gvrp.search.LocalSearch;
 
 public class Main {
 	
@@ -57,6 +59,9 @@ public class Main {
 	
 	@Parameter(names = {"-help", "--help"}, description = "Help with application parameters", help = true)
 	boolean help = false;
+		
+	@Parameter(names = {"-niter"}, description = "Number of iterations per local search", validateWith = PositiveInteger.class)
+	int numOfIterations = 1000000;
 	
 	MeanValuesList meanValuesList = new MeanValuesList();
 	BKS bestKnownSolutions;
@@ -196,15 +201,50 @@ public class Main {
 			return false;
 		}
 
-		int cost = initialSolution.getCost();
-		double fraction = bestKnownSolutions.getBKSFraction(initialSolution);
+		
+		int initialCost = initialSolution.getCost();
+		double initialFraction = bestKnownSolutions.getBKSFraction(initialSolution);
 		if (meanValues.containsKey("iscost")) {
-			meanValuesList.addValueToMean("iscost", fraction);
+			meanValuesList.addValueToMean("iscost", initialFraction);
+			if (isVerbose)
+				System.out.printf("Initial cost: %d (%.2f%% from optimal solution)\n", initialCost, initialFraction*100);
 		}
-		if (isVerbose) {
-			System.out.printf("Initial cost: %d (%.2f%% from optimal solution)\n", cost, fraction*100);
+		
+		
+		long elapsedNanos = System.nanoTime();
+		Solution currentSolution = new Solution(initialSolution);
+		elapsedNanos = System.nanoTime() - elapsedNanos;
+		if (meanValues.containsKey("sclonetime")) {
+			meanValuesList.addValueToMean("sclonetime", (double) elapsedNanos);
+			if (isVerbose)
+				System.out.println("Nanoseconds required to clone solution: " + elapsedNanos);
 		}
-				
+		
+		LocalSearch localSearch = new LocalSearch(initialSolution);
+		
+		int improvementCount = localSearch.findLocalMinimum(numOfIterations);
+		if (improvementCount == 0) {
+			if (isVerbose)
+				System.out.println("Could not find local minima.");
+			if (meanValues.containsKey("improvement"))
+				meanValuesList.addValueToMean("improvement", 0.0d);
+		} else {
+			double fraction = bestKnownSolutions.getBKSFraction(currentSolution);
+			double improvement = initialFraction - fraction;
+			if (meanValues.containsKey("improvement"))
+				meanValuesList.addValueToMean("improvement", improvement);
+			if (isVerbose)
+				System.out.printf("Found local minima (%d improvements --- %.4f%% of improvement)\n", improvementCount, improvement*100);
+		}
+		
+		int finalCost = currentSolution.getCost();
+		double finalFraction = bestKnownSolutions.getBKSFraction(currentSolution);
+		if (meanValues.containsKey("fscost")) {
+			meanValuesList.addValueToMean("fscost", finalFraction);
+			if (isVerbose)
+				System.out.printf("Final cost: %d (%.2f%% from optimal solution)\n", finalCost, finalFraction*100);
+		}
+		
 		return true;
 	}
 
