@@ -1,7 +1,8 @@
 package gvrp;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.ListIterator;
 import java.util.StringJoiner;
 
 import gvrp.diff.InterOpt2Star;
@@ -15,6 +16,8 @@ public class Route extends LinkedList<Customer> {
 	Point depot;
 	int id;
 	int maxCap;
+	HashMap<Customer, Integer> dLeft = new HashMap<>();
+	HashMap<Customer, Integer> dRight = new HashMap<>();
 	
 	public Route(int id, Point depot, int maximumCapacity) {
 		this.id = id;
@@ -50,21 +53,8 @@ public class Route extends LinkedList<Customer> {
 	 */	
 	public int getCost() {
 		if (isEmpty()) return 0; /* No customers */
-		
-		int totalCost = 0;
-		Customer first = getFirst();
-		totalCost += first.distanceFrom(depot);
-		if (size() == 1) return 2*totalCost; /* One customer */
-		
-		ListIterator<Customer> li = listIterator(1);
-		Customer prev = first;
-		while (li.hasNext()) {
-			Customer curr = li.next();
-			totalCost += prev.distanceFrom(curr);
-			prev = curr;
-		}
-		totalCost += prev.distanceFrom(depot);
-		return totalCost;
+		Customer lastCustomer = getLast();
+		return dLeft.get(lastCustomer) + dRight.get(lastCustomer);
 	}
 	
 	
@@ -81,7 +71,154 @@ public class Route extends LinkedList<Customer> {
 		int customerCost = c.getDemand();
 		if (customerCost + getCapacity() > maxCap) return false;
 		if (contains(c)) return false;
+		Customer beforeC = null;
+		if (!isEmpty()) beforeC = getLast();
 		addLast(c);
+		Iterator<Customer> iter = descendingIterator();
+		Customer last = null;
+		if(iter.hasNext()) {
+			last = iter.next(); // skips c
+			int distanceToDepot = c.distanceFrom(depot);
+			if (beforeC == null) {
+				dLeft.put(c, distanceToDepot);
+			} else {
+				int distanceToPrevious = c.distanceFrom(beforeC);
+				dLeft.put(c, dLeft.get(beforeC) + distanceToPrevious);
+			}
+			dRight.put(c, distanceToDepot);
+			while(iter.hasNext()) {
+				Customer customer = iter.next();
+				dRight.put(customer, dRight.get(last) + customer.distanceFrom(last));
+				last = customer;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Recalculates the distance map in a given range of customers. Both indexes are bounded
+	 * between 0 and size-1.
+	 * @param lowerBound - lowest index of customer with left distance unmapped
+	 * @param upperBound - highest index of customer with right distance unmapped
+	 * @param dmatrix - distance matrix
+	 */
+	private void recalculateDistanceMap(int lowerBound, int upperBound, DistanceMatrix dmatrix) {		
+		int size = size();
+		Customer lb = null, ub = null;
+		int lcount = 0, rcount = 0;
+				
+		/*
+		 * Calculating the distance of a customer from depot
+		 * 
+		 * FROM LEFT
+		 * dl(i) = dl(i-1) + D(i,i-1)
+		 * dl(0) = D(0,depot)
+		 */
+		
+		if (lowerBound == 0) {
+			lb = getFirst();
+			lcount = dmatrix.getDistanceFromDepot(lb);
+		} else {
+			lb = get(lowerBound);
+			Customer prev = get(lowerBound-1);
+			lcount = dmatrix.getDistanceBetween(prev, lb) + dLeft.get(prev);
+		}
+
+		dLeft.put(lb, lcount);
+		Iterator<Customer> iterator = listIterator(lowerBound);
+		if(iterator.hasNext()) {
+			Customer prev = iterator.next();
+			while(iterator.hasNext()) {
+				Customer c = iterator.next();
+				lcount += dmatrix.getDistanceBetween(prev, c);
+				dLeft.put(c, lcount);
+				prev = c;
+			}
+		}
+		
+		/* 
+		 * FROM RIGHT
+		 * dr(i) = dr(i+1) + D(i,i+1)
+		 * dr(N) = D(N,depot)
+		 */
+		
+		if (upperBound == size-1) {
+			ub = getLast();
+			rcount = dmatrix.getDistanceFromDepot(ub);
+		} else {
+			ub = get(upperBound);
+			Customer post = get(upperBound+1);
+			rcount = dmatrix.getDistanceBetween(post, ub) + dRight.get(post);
+		}
+
+		dRight.put(ub, rcount);
+		Iterator<Customer> invIterator = descendingIterator();
+		while(invIterator.hasNext() && !invIterator.next().equals(ub));
+		Customer post = ub; /* Begin with upper bound */
+		while(invIterator.hasNext()) {
+			Customer c = invIterator.next();
+			rcount += dmatrix.getDistanceBetween(c, post);
+			dRight.put(c, rcount);
+			post = c;
+		}
+		
+	}
+	
+	/**
+	 * Takes two random numbers and operate a random shift
+	 * @param r1 - random number #1
+	 * @param r2 - random number #2
+	 */
+	public boolean shiftSmart(int r1, int r2, DistanceMatrix dmatrix) {
+		int size = size();
+		if (size < 2) return false;
+		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
+		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
+		
+		/*
+		 * Calculating the delta of route cost by the following expression
+		 * ... -- x -- p1 -- y -- ... -- p2 -- w -- ...
+		 * delta = dxy + dp2p1 + dp1w - dxp1 - dp1y - dp2w
+		 * if p1 and p2 are neighbours, y == p2
+		 * There is improvement iff delta < 0
+		 */
+		
+		int x = p1 - 1, y = p1 + 1, w = p2 + 1; /* vertices */
+		/* if x == -1, x is depot. if w == size, w is depot */
+		int dxy, dp2p1, dp1w, dxp1, dp1y, dp2w; /* distances */
+		Customer cx = null, cy = null, cw = null, cp1 = get(p1), cp2 = get(p2);
+		
+		if (x != -1) cx = get(x);
+		cy = get(y);
+		if (w != size) cw = get(w);
+		
+		if (cx == null) {
+			dxy = dmatrix.getDistanceFromDepot(cy);
+			dxp1 = dmatrix.getDistanceFromDepot(cp1);
+		} else {
+			dxy = dmatrix.getDistanceBetween(cx, cy);
+			dxp1 = dmatrix.getDistanceBetween(cx, cp1);
+		}
+		
+		if (cw == null) {
+			dp1w = dmatrix.getDistanceFromDepot(cp1);
+			dp2w = dmatrix.getDistanceFromDepot(cp2);
+		} else {
+			dp1w = dmatrix.getDistanceBetween(cp1, cw);
+			dp2w = dmatrix.getDistanceBetween(cp2, cw);
+		}
+		
+		dp2p1 = dmatrix.getDistanceBetween(cp1, cp2);
+		dp1y = dmatrix.getDistanceBetween(cp1, cy);
+		
+		int delta = dxy + dp2p1 + dp1w - dxp1 - dp1y - dp2w;
+		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		
+		/* Local search is then applied */
+		add(p2, remove(p1));
+		
+		recalculateDistanceMap(cx == null ? p1 : x, cw == null ? p2 : w, dmatrix);
+		
 		return true;
 	}
 	
@@ -99,7 +236,7 @@ public class Route extends LinkedList<Customer> {
 		add(p2, remove(p1)); /* 0 is in the beginning and size-1 is at the end */
 		return new IntraRelocate(this, p1, p2);
 	}
-	
+		
 	/**
 	 * Flips a random sequence within the route
 	 * @param r1 - random number #1

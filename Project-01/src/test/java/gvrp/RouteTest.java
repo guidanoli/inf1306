@@ -2,6 +2,8 @@ package gvrp;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 
 import org.junit.jupiter.api.AfterEach;
@@ -16,9 +18,10 @@ import gvrp.diff.Move;
 class RouteTest {
 
 	Route route;
+	Point depot;
 	
 	Route newRoute(int id) {
-		return new Route(id, new Point(0,0), 100);
+		return new Route(id, depot, 100);
 	}
 	
 	int counter = 1;
@@ -35,6 +38,7 @@ class RouteTest {
 	
 	@BeforeEach
 	void beforeEach() {
+		depot = new Point(0,0);
 		route = newRoute(0);
 	}
 	
@@ -142,6 +146,63 @@ class RouteTest {
 		
 	}
 	
+	@Nested
+	@DisplayName("the getCost method")
+	class GetCostTest {
+				
+		final int SIZE = 10;
+
+		DistanceMatrix dmatrix;
+		int initialCost;
+				
+		@BeforeEach
+		void fillRoute() {
+			ArrayList<Integer> x = new ArrayList<>(SIZE), y = new ArrayList<>(SIZE);
+			for(int i = 0; i < SIZE; i++) {
+				x.add(i); y.add(i);
+			}
+			Collections.shuffle(x);
+			Collections.shuffle(y);
+			
+			for(int i = 0; i < SIZE; i++) {
+				Customer c = new Customer(i+1);
+				c.setSet(new CustomerSet(i+1, i+1));
+				c.setPosition(new Point(x.get(i), y.get(i)));
+				route.addCustomer(c);
+			}
+			
+			ArrayList<Customer> al = new ArrayList<>(route);
+			Customer depotCustomer = new Customer(0);
+			depotCustomer.setPosition(depot);
+			depotCustomer.setSet(new CustomerSet(0,0));
+			al.add(depotCustomer);
+			dmatrix = new DistanceMatrix(al, depot);
+			initialCost = route.getCost();
+		}
+						
+		@RepeatedTest(value = SIZE*SIZE)
+		@DisplayName("should disturb the distance")
+		void testDisturb(RepetitionInfo info) {
+			int n = info.getCurrentRepetition() - 1;
+			boolean shifted = route.shiftSmart(n % SIZE, n / SIZE, dmatrix);
+			if (shifted) assertTrue(initialCost > route.getCost());
+		}
+		
+		@AfterEach
+		void checkDistanceMaps() {
+			for(int i = 0; i < route.size() - 1; i++) {
+				Customer ci = route.get(i);
+				Customer cipp = route.get(i+1);
+				int dist = dmatrix.getDistanceBetween(ci, cipp);
+				assertEquals(dist, route.dLeft.get(cipp) - route.dLeft.get(ci),
+						ci + " " + cipp);
+				assertEquals(dist, route.dRight.get(ci) - route.dRight.get(cipp),
+						ci + " " + cipp);
+			}
+		}
+		
+	}
+	
 	@AfterEach
 	void afterEach() {
 		assertNotNull(route,
@@ -155,3 +216,4 @@ class RouteTest {
 	}
 	
 }
+

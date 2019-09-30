@@ -1,6 +1,6 @@
 package gvrp;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.function.Predicate;
 
@@ -8,7 +8,7 @@ public class DistanceMatrix {
 
 	int [][] matrix;
 	
-	public DistanceMatrix(ArrayList<Customer> customers, Point depot) {
+	public DistanceMatrix(List<Customer> customers, Point depot) {
 		int matrixDimension = customers.size();
 		matrix = new int[matrixDimension][matrixDimension];
 		for (Customer ci : customers) {
@@ -34,6 +34,10 @@ public class DistanceMatrix {
 	
 	public int getDistanceBetween(Customer ci, Customer cj) {
 		return matrix[ci.getId()][cj.getId()];
+	}
+	
+	public int getDistanceFromDepot(Customer c) {
+		return matrix[0][c.getId()];
 	}
 	
 	public Integer getClosestNeighbourId(int customerId, Predicate<Integer> isVisited) {
