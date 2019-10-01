@@ -21,7 +21,7 @@ class RouteTest {
 	Point depot;
 	
 	Route newRoute(int id) {
-		return new Route(id, depot, 100);
+		return new Route(id, depot, 10000);
 	}
 	
 	int counter = 1;
@@ -150,7 +150,7 @@ class RouteTest {
 	@DisplayName("the getCost method")
 	class GetCostTest {
 				
-		final int SIZE = 10;
+		final int SIZE = 10; /* See that this value is dependent on the route capacity. */
 
 		DistanceMatrix dmatrix;
 		int initialCost;
@@ -179,26 +179,70 @@ class RouteTest {
 			dmatrix = new DistanceMatrix(al, depot);
 			initialCost = route.getCost();
 		}
-						
+				
 		@RepeatedTest(value = SIZE*SIZE)
-		@DisplayName("should disturb the distance")
-		void testDisturb(RepetitionInfo info) {
+		@DisplayName("after intra shift")
+		void testIntraShift(RepetitionInfo info) {
 			int n = info.getCurrentRepetition() - 1;
 			boolean shifted = route.shiftSmart(n % SIZE, n / SIZE, dmatrix);
-			if (shifted) assertTrue(initialCost > route.getCost());
+			if (shifted) assertTrue(initialCost > route.getCost(), () -> "should output a lower cost when improves");
+			else assertEquals(initialCost, route.getCost(), () -> "but stay the same when does not improve");
+		}
+		
+		@RepeatedTest(value = SIZE*SIZE)
+		@DisplayName("after inter shift")
+		void testInterShift(RepetitionInfo info) {
+			int size = info.getCurrentRepetition();
+			int n = size - 1;
+			
+			Route anotherRoute = newRoute(1);
+			ArrayList<Integer> x = new ArrayList<>(size), y = new ArrayList<>(size);
+			for(int i = 0; i < size; i++) {
+				x.add(i); y.add(i);
+			}
+			Collections.shuffle(x);
+			Collections.shuffle(y);
+			
+			for(int i = 0; i < size; i++) {
+				Customer c = new Customer(SIZE+i+1);
+				c.setSet(new CustomerSet(SIZE+i+1, i+1));
+				c.setPosition(new Point(x.get(i), y.get(i)));
+				boolean added = anotherRoute.addCustomer(c);
+				assertTrue(added, "Could not add " + c + " to " + anotherRoute);
+			}
+			
+			ArrayList<Customer> al = new ArrayList<>(route);
+			al.addAll(anotherRoute);
+			Customer depotCustomer = new Customer(0);
+			depotCustomer.setPosition(depot);
+			depotCustomer.setSet(new CustomerSet(0,0));
+			al.add(depotCustomer);
+			dmatrix = new DistanceMatrix(al, depot);
+			initialCost = route.getCost() + anotherRoute.getCost();
+			
+			boolean shifted = route.shiftInterSmart(anotherRoute, n % SIZE, n / SIZE, dmatrix);
+			int newCost = route.getCost() + anotherRoute.getCost();
+			if (shifted) assertTrue(initialCost > newCost, () -> "when improves");
+			else assertEquals(initialCost, newCost, () -> "but not when does not improve");
+			
+			checkDistanceMapOfRoute(anotherRoute);
+		}
+		
+		void checkDistanceMapOfRoute(Route r) {
+			for(int i = 0; i < r.size() - 1; i++) {
+				Customer ci = r.get(i);
+				Customer cipp = r.get(i+1);
+				int dist = dmatrix.getDistanceBetween(ci, cipp);
+				assertEquals(dist, r.dLeft.get(cipp) - r.dLeft.get(ci),
+						ci + " " + cipp);
+				assertEquals(dist, r.dRight.get(ci) - r.dRight.get(cipp),
+						ci + " " + cipp);
+			}
 		}
 		
 		@AfterEach
 		void checkDistanceMaps() {
-			for(int i = 0; i < route.size() - 1; i++) {
-				Customer ci = route.get(i);
-				Customer cipp = route.get(i+1);
-				int dist = dmatrix.getDistanceBetween(ci, cipp);
-				assertEquals(dist, route.dLeft.get(cipp) - route.dLeft.get(ci),
-						ci + " " + cipp);
-				assertEquals(dist, route.dRight.get(ci) - route.dRight.get(cipp),
-						ci + " " + cipp);
-			}
+			checkDistanceMapOfRoute(route);
 		}
 		
 	}

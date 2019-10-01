@@ -97,9 +97,10 @@ public class Route extends LinkedList<Customer> {
 	
 	/**
 	 * Recalculates the distance map in a given range of customers. Both indexes are bounded
-	 * between 0 and size-1.
-	 * @param lowerBound - lowest index of customer with left distance unmapped
-	 * @param upperBound - highest index of customer with right distance unmapped
+	 * between 0 and size-1. Lower and upper bounds don't have to be mapped to the left and
+	 * right distances map, but the lower bounds' predecessor and right bound's successor must be.
+	 * @param lowerBound - lowest index of customer with left distance outdated
+	 * @param upperBound - highest index of customer with right distance outdated
 	 * @param dmatrix - distance matrix
 	 */
 	private void recalculateDistanceMap(int lowerBound, int upperBound, DistanceMatrix dmatrix) {		
@@ -168,6 +169,7 @@ public class Route extends LinkedList<Customer> {
 	 * Takes two random numbers and operate a random shift
 	 * @param r1 - random number #1
 	 * @param r2 - random number #2
+	 * @param dmatrix - distance matrix
 	 */
 	public boolean shiftSmart(int r1, int r2, DistanceMatrix dmatrix) {
 		int size = size();
@@ -177,7 +179,13 @@ public class Route extends LinkedList<Customer> {
 		
 		/*
 		 * Calculating the delta of route cost by the following expression
+		 * 
+		 * BEFORE
 		 * ... -- x -- p1 -- y -- ... -- p2 -- w -- ...
+		 * 
+		 * AFTER
+		 * ... -- x -- y -- ... -- p2 -- p1 -- w -- ...
+		 * 
 		 * delta = dxy + dp2p1 + dp1w - dxp1 - dp1y - dp2w
 		 * if p1 and p2 are neighbours, y == p2
 		 * There is improvement iff delta < 0
@@ -237,6 +245,89 @@ public class Route extends LinkedList<Customer> {
 		return new IntraRelocate(this, p1, p2);
 	}
 		
+	/**
+	 * Takes two random numbers and operate a random shift inter route
+	 * @param r1 - random number #1
+	 * @param r2 - random number #2
+	 * @param dmatrix - distance matrix
+	 */
+	public boolean shiftInterSmart(Route r, int r1, int r2, DistanceMatrix dmatrix) {
+		int size = size();
+		int rSize = r.size();
+		if (size < 2) return false; /* Can't leave this route empty */
+		int p = r1 % size; /* p in [0,size-1] */
+		int q = r2 % rSize; /* q in [0,rSize-1] */
+		
+		/*
+		 * Calculating the delta of route cost by the following expression
+		 * 
+		 * BEFORE
+		 * This route: ... -- x -- p -- y -- ...
+		 * Route r: ... -- z -- q -- ...
+		 * 
+		 * AFTER
+		 * This route: ... -- x -- y -- ...
+		 * Route r: ... -- z -- p -- q -- ...
+		 * 
+		 * delta = dxy + dzp + dpq - dxp - dpy -dzq
+		 * There is improvement iff delta < 0
+		 */
+		
+		int x = p - 1, y = p + 1, z = q - 1; /* vertices */
+		/* If index is either -1 or the size of route, it is the depot */
+		int dxy, dzp, dpq, dxp, dpy, dzq; /* distances */
+		Customer cx = null, cy = null, cz = null, cp = get(p), cq = r.get(q);
+		
+		/*
+		 * Checking if route r has enough capacity
+		 */
+		
+		if (cp.getDemand() + r.getCapacity() > r.maxCap) return false;
+		
+		/*
+		 * Checking if there is a cost improvement
+		 */
+		
+		if (x != -1) cx = get(x);
+		if (y != size) cy = get(y);
+		if (z != -1) cz = r.get(z);
+		
+		if (cx == null) {
+			dxy = cy == null ? 0 : dmatrix.getDistanceFromDepot(cy);
+			dxp = dmatrix.getDistanceFromDepot(cp);
+		} else {
+			dxy = cy == null ? dmatrix.getDistanceFromDepot(cx) : dmatrix.getDistanceBetween(cx, cy);
+			dxp = dmatrix.getDistanceBetween(cx, cp);
+		}
+		
+		if (cy == null) {
+			dpy = dmatrix.getDistanceFromDepot(cp);
+		} else {
+			dpy = dmatrix.getDistanceBetween(cp, cy);
+		}
+		
+		if (cz == null) {
+			dzp = dmatrix.getDistanceFromDepot(cp);
+			dzq = dmatrix.getDistanceFromDepot(cq);
+		} else {
+			dzp = dmatrix.getDistanceBetween(cz, cp);
+			dzq = dmatrix.getDistanceBetween(cz, cq);
+		}
+		
+		dpq = dmatrix.getDistanceBetween(cp, cq);
+		
+		int delta = dxy + dzp + dpq - dxp - dpy - dzq;
+		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		
+		/* Local search is then applied */
+		r.add(q, remove(p));
+		
+		recalculateDistanceMap(cx == null ? p : x, cy == null ? p-1 : y-1, dmatrix); /* y decreased by one because p is removed from this route */
+		r.recalculateDistanceMap(cz == null ? q : z, q+1, dmatrix); /* q increased by one because p is inserted in the route r*/
+		
+		return true;
+	}
+	
 	/**
 	 * Flips a random sequence within the route
 	 * @param r1 - random number #1
