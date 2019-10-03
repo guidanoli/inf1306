@@ -26,17 +26,19 @@ public class Greedy implements ConstructiveMetaheuristic {
 		Integer currentId = dmatrix.getClosestNeighbourId(0, isVisited);
 		while (currentId != null) {
 			Customer currentCustomer = instance.getCustomers().get(currentId);
-			visitedSets[currentCustomer.getSet().getId()] = true;
-			boolean addedCustomer = currentRoute.addCustomer(currentCustomer);
+			boolean addedCustomer = currentRoute.addCustomer(currentCustomer, dmatrix);
 			if (!addedCustomer) {
 				if (!routeIter.hasNext()) break; /* No more routes */
 				currentRoute = routeIter.next();
 				/* This must never fail since demand < route capacity */
-				currentRoute.addCustomer(currentCustomer);
+				currentRoute.addCustomer(currentCustomer, dmatrix);
 			}
+			visitedSets[currentCustomer.getSet().getId()] = true;
 			currentId = dmatrix.getClosestNeighbourId(currentId, isVisited);
 		}
+		InsertionHeuristics.fixSolution(visitedSets, solution);
 		return solution;
 	}
 	
 }
+

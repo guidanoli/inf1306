@@ -63,6 +63,9 @@ public class Main {
 	@Parameter(names = {"-niter"}, description = "Number of iterations per local search", validateWith = PositiveInteger.class)
 	int numOfIterations = 1000000;
 	
+	@Parameter(names = {"-seed"}, description = "RNG seed")
+	long seed = 0;
+	
 	MeanValuesList meanValuesList = new MeanValuesList();
 	BKS bestKnownSolutions;
 		
@@ -133,7 +136,7 @@ public class Main {
 				return;
 			}
 		} else {
-			System.out.println("Invalid mode '" + mode + "'");
+			System.out.println(">>> Invalid mode '" + mode + "'");
 		}
 	}
 
@@ -188,7 +191,7 @@ public class Main {
 		Solution initialSolution = SolutionFactory.construct(instance, constructiveMetaheuristic);
 		
 		if (initialSolution == null) {
-			System.out.println(String.format("'%s' is not a valid constructive metaheuristic.",
+			System.out.println(String.format(">>> '%s' is not a valid constructive metaheuristic.",
 					constructiveMetaheuristic));
 			return false;
 		}
@@ -197,7 +200,7 @@ public class Main {
 			System.out.println(initialSolution);
 		
 		if (!initialSolution.isValid(isVerbose)) {
-			System.out.println("Initial solution is invalid.");
+			System.out.println(">>> Initial solution is invalid.");
 			return false;
 		}
 
@@ -220,16 +223,18 @@ public class Main {
 				System.out.println("Nanoseconds required to clone solution: " + elapsedNanos);
 		}
 		
-		LocalSearch localSearch = new LocalSearch(initialSolution);
+		LocalSearch localSearch = new LocalSearch(currentSolution, seed);
+		int improvementCount = localSearch.findLocalMinimum((s,i) -> i < numOfIterations && bestKnownSolutions.getBKSFraction(s) > 0.05);
 		
-		int improvementCount = localSearch.findLocalMinimum(numOfIterations);
+		Solution finalSolution = localSearch.getBestSolution();
+		
 		if (improvementCount == 0) {
 			if (isVerbose)
 				System.out.println("Could not find local minima.");
 			if (meanValues.containsKey("improvement"))
 				meanValuesList.addValueToMean("improvement", 0.0d);
 		} else {
-			double fraction = bestKnownSolutions.getBKSFraction(currentSolution);
+			double fraction = bestKnownSolutions.getBKSFraction(finalSolution);
 			double improvement = initialFraction - fraction;
 			if (meanValues.containsKey("improvement"))
 				meanValuesList.addValueToMean("improvement", improvement);

@@ -56,6 +56,15 @@ public class Solution extends ArrayList<Route> {
 				}
 			}
 		}
+		int numOfSets = getInstance().getSets().size();
+		if (customerSetInRoutes.size() != numOfSets) {
+			if (printError) {
+				HashSet<CustomerSet> copyOfSets = new HashSet<>(getInstance().getSets());
+				copyOfSets.removeAll(customerSetInRoutes);
+				System.out.println("Not all customer sets are in routes (" + copyOfSets.size() + " remaining): " + copyOfSets);
+			}
+			return false;
+		}
 		return true;
 	}
 	

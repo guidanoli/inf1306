@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.TreeSet;
 
 import gvrp.Customer;
+import gvrp.DistanceMatrix;
 import gvrp.Instance;
 import gvrp.Point;
 import gvrp.Route;
@@ -36,6 +37,7 @@ public class Scan implements ConstructiveMetaheuristic {
 		
 	public Solution construct(Instance instance) {
 		Solution solution = new Solution(instance);
+		DistanceMatrix dmatrix = instance.getDistancematrix();
 		TreeSet<CustomerAngle> thetas = new TreeSet<CustomerAngle>(
 				Comparator.comparingDouble(t -> t.getTheta())); /* sorts by angle */
 		Point depot = instance.getDepot();
@@ -53,14 +55,15 @@ public class Scan implements ConstructiveMetaheuristic {
 			int setId = ca.getCustomer().getSet().getId();
 			if (visitedSets[setId]) continue;
 			visitedSets[setId] = true;
-			boolean addedCustomer = currentRoute.addCustomer(ca.getCustomer());
+			boolean addedCustomer = currentRoute.addCustomer(ca.getCustomer(), dmatrix);
 			if (!addedCustomer) {
 				if (!routeIter.hasNext()) break; /* No more routes */
 				currentRoute = routeIter.next();
 				/* This must never fail since demand < route capacity */
-				currentRoute.addCustomer(ca.getCustomer());
+				currentRoute.addCustomer(ca.getCustomer(), dmatrix);
 			}
 		}
+		InsertionHeuristics.fixSolution(visitedSets, solution);
 		return solution;
 	}
 

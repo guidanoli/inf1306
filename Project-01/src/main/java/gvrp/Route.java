@@ -1,5 +1,6 @@
 package gvrp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -16,6 +17,9 @@ public class Route extends LinkedList<Customer> {
 	Point depot;
 	int id;
 	int maxCap;
+	
+	/* Distance buffer
+	 * key = null -> distance from depot to depot */
 	HashMap<Customer, Integer> dLeft = new HashMap<>();
 	HashMap<Customer, Integer> dRight = new HashMap<>();
 	
@@ -53,8 +57,21 @@ public class Route extends LinkedList<Customer> {
 	 */	
 	public int getCost() {
 		if (isEmpty()) return 0; /* No customers */
-		Customer lastCustomer = getLast();
-		return dLeft.get(lastCustomer) + dRight.get(lastCustomer);
+		
+		int totalCost = 0;
+		Customer first = getFirst();
+		totalCost += first.distanceFrom(depot);
+		if (size() == 1) return 2*totalCost; /* One customer */
+		
+		Iterator<Customer> li = listIterator();
+		Customer prev = first;
+		while (li.hasNext()) {
+			Customer curr = li.next();
+			totalCost += prev.distanceFrom(curr);
+			prev = curr;
+		}
+		totalCost += prev.distanceFrom(depot);
+		return totalCost;
 	}
 	
 	
@@ -62,52 +79,92 @@ public class Route extends LinkedList<Customer> {
 	public String toString() {
 		StringJoiner sj = new StringJoiner(", ");
 		for (Customer c : this) {
-			sj.add(String.format("C%d", c.getId()));
+			sj.add(String.format("C%d(%d,d=%d)", c.getId(), c.getSet().getId(), c.getDemand()));
 		}
-		return String.format("R%d = { cost = %d, trajectory = [%s] }", id, getCost(), sj.toString());
+		return String.format("R%d = { cost = %d, cap = %d, trajectory = [%s] }", id, getCost(), getCapacity(), sj.toString());
 	}
 	
-	public boolean addCustomer(Customer c) {
-		int customerCost = c.getDemand();
-		if (customerCost + getCapacity() > maxCap) return false;
-		if (contains(c)) return false;
-		Customer beforeC = null;
-		if (!isEmpty()) beforeC = getLast();
-		addLast(c);
-		Iterator<Customer> iter = descendingIterator();
-		Customer last = null;
-		if(iter.hasNext()) {
-			last = iter.next(); // skips c
-			int distanceToDepot = c.distanceFrom(depot);
-			if (beforeC == null) {
-				dLeft.put(c, distanceToDepot);
-			} else {
-				int distanceToPrevious = c.distanceFrom(beforeC);
-				dLeft.put(c, dLeft.get(beforeC) + distanceToPrevious);
-			}
-			dRight.put(c, distanceToDepot);
-			while(iter.hasNext()) {
-				Customer customer = iter.next();
-				dRight.put(customer, dRight.get(last) + customer.distanceFrom(last));
-				last = customer;
-			}
-		}
+	public boolean removeCustomer(Customer c, DistanceMatrix dmatrix) {
+		int index = indexOf(c);
+		boolean removed = remove(c);
+		if (!removed) return false;
+		if (isEmpty()) return true;
+		int lb = Math.max(0, index-1);
+		int ub = Math.min(size()-1, index+1);
+		recalculateDistanceMap(lb, ub, dmatrix);
 		return true;
 	}
 	
+	public boolean addCustomer(Customer c, DistanceMatrix dmatrix) {
+		int setDemand = c.getSet().getDemand();
+		if (setDemand + getCapacity() > maxCap) return false;
+		if (contains(c)) return false;
+		addLast(c);
+		int size = size();
+		recalculateDistanceMap(size-1, size-1, dmatrix);
+		return true;
+	}
+
+	private void recalculateLayerDistanceMap(DistanceMatrix dmatrix, CustomerSet baseLayer, CustomerSet newLayer, HashMap<Customer, Integer> map) {
+		for (Customer newc : newLayer) {
+			int shortestDistance = Integer.MAX_VALUE;
+			for (Customer basec : baseLayer) {
+				int distance = dmatrix.getDistanceBetween(basec, newc) + map.get(basec);
+				if (distance < shortestDistance) {
+					shortestDistance = distance;
+				}
+			}
+			map.put(newc, shortestDistance);
+		}
+	}
+	
+	private void recalculateLayerRightDistanceMap(DistanceMatrix dmatrix, CustomerSet posterior, CustomerSet current) {
+		recalculateLayerDistanceMap(dmatrix, posterior, current, dRight);
+	}
+	
+	private void recalculateLayerLeftDistanceMap(DistanceMatrix dmatrix, CustomerSet previous, CustomerSet current) {
+		recalculateLayerDistanceMap(dmatrix, previous, current, dLeft);
+	}
+	
 	/**
-	 * Recalculates the distance map in a given range of customers. Both indexes are bounded
+	 * Recalculates the distance map in a given range of customers sets. Both indexes are bounded
 	 * between 0 and size-1. Lower and upper bounds don't have to be mapped to the left and
 	 * right distances map, but the lower bounds' predecessor and right bound's successor must be.
+	 * All customers within each set are taken into account.
+	 * 
 	 * @param lowerBound - lowest index of customer with left distance outdated
 	 * @param upperBound - highest index of customer with right distance outdated
 	 * @param dmatrix - distance matrix
 	 */
-	private void recalculateDistanceMap(int lowerBound, int upperBound, DistanceMatrix dmatrix) {		
+	private void recalculateDistanceMap(int lowerBound, int upperBound, DistanceMatrix dmatrix) {
 		int size = size();
 		Customer lb = null, ub = null;
-		int lcount = 0, rcount = 0;
 				
+		/* 
+		 * FROM RIGHT
+		 * dr(i) = dr(i+1) + D(i,i+1)
+		 * dr(N) = D(N,depot)
+		 */
+		
+		if (upperBound == size-1) {
+			ub = getLast();
+			for (Customer setCustomer : ub.getSet())
+				dRight.put(setCustomer, dmatrix.getDistanceFromDepot(setCustomer));
+		} else {
+			ub = get(upperBound);
+			Customer post = get(upperBound+1);
+			recalculateLayerRightDistanceMap(dmatrix, post.getSet(), ub.getSet());
+		}
+
+		Iterator<Customer> invIterator = descendingIterator();
+		while(invIterator.hasNext() && !invIterator.next().equals(ub));
+		Customer post = ub; /* Begin with upper bound */
+		while(invIterator.hasNext()) {
+			Customer c = invIterator.next();
+			recalculateLayerRightDistanceMap(dmatrix, post.getSet(), c.getSet());
+			post = c;
+		}
+		
 		/*
 		 * Calculating the distance of a customer from depot
 		 * 
@@ -118,57 +175,39 @@ public class Route extends LinkedList<Customer> {
 		
 		if (lowerBound == 0) {
 			lb = getFirst();
-			lcount = dmatrix.getDistanceFromDepot(lb);
+			int shortestDistance = Integer.MAX_VALUE;
+			for (Customer setCustomer : lb.getSet()) {
+				int distance = dmatrix.getDistanceFromDepot(setCustomer);
+				int accumulatedDistance = distance + dRight.get(setCustomer);
+				if (accumulatedDistance < shortestDistance) {
+					shortestDistance = accumulatedDistance;
+				}
+				dLeft.put(setCustomer, distance);
+			}
+			/* Closest costumer to the depot (from the right-hand side) */
+			dRight.put(null, shortestDistance);
 		} else {
 			lb = get(lowerBound);
 			Customer prev = get(lowerBound-1);
-			lcount = dmatrix.getDistanceBetween(prev, lb) + dLeft.get(prev);
+			recalculateLayerLeftDistanceMap(dmatrix, prev.getSet(), lb.getSet());
 		}
 
-		dLeft.put(lb, lcount);
 		Iterator<Customer> iterator = listIterator(lowerBound);
 		if(iterator.hasNext()) {
 			Customer prev = iterator.next();
 			while(iterator.hasNext()) {
-				Customer c = iterator.next();
-				lcount += dmatrix.getDistanceBetween(prev, c);
-				dLeft.put(c, lcount);
-				prev = c;
+				Customer curr = iterator.next();
+				recalculateLayerLeftDistanceMap(dmatrix, prev.getSet(), curr.getSet());
+				prev = curr;
 			}
-		}
-		
-		/* 
-		 * FROM RIGHT
-		 * dr(i) = dr(i+1) + D(i,i+1)
-		 * dr(N) = D(N,depot)
-		 */
-		
-		if (upperBound == size-1) {
-			ub = getLast();
-			rcount = dmatrix.getDistanceFromDepot(ub);
-		} else {
-			ub = get(upperBound);
-			Customer post = get(upperBound+1);
-			rcount = dmatrix.getDistanceBetween(post, ub) + dRight.get(post);
-		}
-
-		dRight.put(ub, rcount);
-		Iterator<Customer> invIterator = descendingIterator();
-		while(invIterator.hasNext() && !invIterator.next().equals(ub));
-		Customer post = ub; /* Begin with upper bound */
-		while(invIterator.hasNext()) {
-			Customer c = invIterator.next();
-			rcount += dmatrix.getDistanceBetween(c, post);
-			dRight.put(c, rcount);
-			post = c;
 		}
 		
 	}
 	
 	/**
 	 * Takes two random numbers and operate a random shift
-	 * @param r1 - random number #1
-	 * @param r2 - random number #2
+	 * @param r1 - random number #1 (good between 0 and size-2)
+	 * @param r2 - random number #2 (good between 0 and size-1)
 	 * @param dmatrix - distance matrix
 	 */
 	public boolean shiftSmart(int r1, int r2, DistanceMatrix dmatrix) {
@@ -247,11 +286,13 @@ public class Route extends LinkedList<Customer> {
 		
 	/**
 	 * Takes two random numbers and operate a random shift inter route
-	 * @param r1 - random number #1
-	 * @param r2 - random number #2
+	 * @param r - another route
+	 * @param r1 - random number #1 (good between 0 and size-1)
+	 * @param r2 - random number #2 (good between 0 and r.size-1)
 	 * @param dmatrix - distance matrix
 	 */
 	public boolean shiftInterSmart(Route r, int r1, int r2, DistanceMatrix dmatrix) {
+		if (this == r) return false;
 		int size = size();
 		int rSize = r.size();
 		if (size < 2) return false; /* Can't leave this route empty */
@@ -363,6 +404,40 @@ public class Route extends LinkedList<Customer> {
 		for (int i = 0; i < size - 1 - p; i++)
 			r.add(rP + 1, removeLast());
 		return new InterOpt2Star(this, r, p, rP);
+	}
+	
+	public void findShortestPath(DistanceMatrix dmatrix) {
+		ArrayList<Customer> newRoute = new ArrayList<>(size());
+		recalculateDistanceMap(0, 0, dmatrix);
+		
+		/*
+		 * Bellman-Ford algorithm
+		 */
+		
+		Customer previous = null;
+		for (Customer customer : this) {
+			int distanceFromRight = dRight.get(previous);
+			/* Distance of previous point to right-hand side depot */
+			Customer closestCustomer = null;
+			for (Customer setCustomer : customer.getSet()) {
+				int distanceToCustomer;
+				if (previous == null) {
+					/* If set is the first set and last customer is the depot */
+					distanceToCustomer = dmatrix.getDistanceFromDepot(setCustomer);
+				} else {
+					/* If set is not the first set and there is a previous customer */
+					distanceToCustomer = dmatrix.getDistanceBetween(previous, setCustomer);
+				}
+				/* Check if set customer is the chosen one */
+				if (distanceToCustomer + dRight.get(setCustomer) == distanceFromRight) {
+					closestCustomer = setCustomer;
+					break;
+				}
+			}
+			previous = closestCustomer;
+			newRoute.add(previous);
+		}
+		replaceAll((c) -> newRoute.get(indexOf(c)));
 	}
 	
 }

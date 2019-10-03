@@ -9,8 +9,14 @@ public class DistanceMatrix {
 	int [][] matrix;
 	
 	public DistanceMatrix(List<Customer> customers, Point depot) {
-		int matrixDimension = customers.size();
-		matrix = new int[matrixDimension][matrixDimension];
+		int biggestId = 0;
+		for (Customer c : customers) {
+			int cId = c.getId();
+			if (cId > biggestId)
+				biggestId = cId;
+		}
+		int dimension = biggestId + 1; 
+		matrix = new int[dimension][dimension];
 		for (Customer ci : customers) {
 			setDistanceToDepot(ci, depot);
 			for (Customer cj : customers) {
@@ -63,11 +69,17 @@ public class DistanceMatrix {
 		StringJoiner sj = new StringJoiner("\n");
 		for (int i = 0; i < matrix.length; i++) {
 			StringBuilder sb = new StringBuilder();
+			sb.append("C" + i + "\t");
 			for (int j = 0; j <= i; j++)
 				sb.append(matrix[i][j] + "\t");
 			sj.add(sb.toString());
 		}
-		
+		StringBuilder sb = new StringBuilder();
+		sb.append("\n");
+		for (int i = 0; i < matrix.length; i++) {
+			sb.append("\tC" + i);
+		}
+		sj.add(sb.toString());
 		return sj.toString();
 	}
 	
