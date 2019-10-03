@@ -3,6 +3,7 @@ package gvrp;
 public class Customer {
 
 	CustomerSet set;
+	Route route;
 	Point pos;
 	int id;
 	
@@ -40,6 +41,22 @@ public class Customer {
 	
 	public int distanceFrom(Point point) {
 		return this.pos.distanceTo(point);
+	}
+	
+	public void insertInRoute(Route route) {
+		this.route = route;
+	}
+	
+	public void removeFromRoute() {
+		route = null;
+	}
+	
+	public Route getRoute() {
+		return route;
+	}
+	
+	public boolean isInRoute() {
+		return route != null;
 	}
 	
 	@Override

@@ -29,6 +29,7 @@ public class GammaSet {
 				/* Add all neighbouring sets to a heap sorted by the
 				 * distance to the set i
 				 */
+				if (i == j) continue;
 				heap.add(customers.get(j));
 			}
 			ArrayList<Customer> kClosestCustomers = new ArrayList<>(k);

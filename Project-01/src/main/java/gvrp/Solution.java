@@ -56,6 +56,19 @@ public class Solution extends ArrayList<Route> {
 				}
 			}
 		}
+		/* For redundancy, check also if all sets have exactly one customer in route */
+		for (CustomerSet set : instance.getSets()) {
+			int numOfCustomersInRoute = 0;
+			for (Customer setCustomer : set) {
+				if (setCustomer.isInRoute())
+					numOfCustomersInRoute++;
+			}
+			if (numOfCustomersInRoute == 0) {
+				if (printError) System.out.println("No customer from " + set.toCompactString() + " is in route.");
+			} else if(numOfCustomersInRoute > 1) {
+				if (printError) System.out.println("More than one customer from " + set.toCompactString() + " is in route.");
+			}
+		}
 		int numOfSets = getInstance().getSets().size();
 		if (customerSetInRoutes.size() != numOfSets) {
 			if (printError) {

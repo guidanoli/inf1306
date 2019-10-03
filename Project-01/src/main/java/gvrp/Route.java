@@ -87,6 +87,7 @@ public class Route extends LinkedList<Customer> {
 		int lb = Math.max(0, index-1);
 		int ub = Math.min(size()-1, index+1);
 		recalculateDistanceMap(lb, ub, dmatrix);
+		c.removeFromRoute(); /* Updates customer route */
 		return true;
 	}
 	
@@ -97,6 +98,7 @@ public class Route extends LinkedList<Customer> {
 		addLast(c);
 		int size = size();
 		recalculateDistanceMap(size-1, size-1, dmatrix);
+		c.insertInRoute(this); /* Updates customer route */
 		return true;
 	}
 
@@ -208,8 +210,16 @@ public class Route extends LinkedList<Customer> {
 	public boolean shiftSmart(int r1, int r2, DistanceMatrix dmatrix) {
 		int size = size();
 		if (size < 2) return false;
-		int p1 = Math.abs(r1) % (size - 1); /* p1 in [0,size-2] */
-		int p2 = p1 + 1 + Math.abs(r2) % (size - 1 - p1); /* p2 in [p1+1,size-1] */
+		
+		/* Filtering random input
+		 * such that 0 >= r1 < r2 > size */
+		r1 = Math.abs(r1);
+		r2 = Math.abs(r2);
+		r1 = Math.min(r1, r2);
+		r2 = Math.max(r1, r2);
+		
+		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
+		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
 		
 		/*
 		 * Calculating the delta of route cost by the following expression
@@ -344,6 +354,8 @@ public class Route extends LinkedList<Customer> {
 		/* Local search is then applied */
 		r.add(q, remove(p));
 		
+		cp.insertInRoute(r); /* Updates customer route */
+		
 		recalculateDistanceMap(cx == null ? p : x, cy == null ? p-1 : y-1, dmatrix); /* y decreased by one because p is removed from this route */
 		r.recalculateDistanceMap(cz == null ? q : z, q+1, dmatrix); /* q increased by one because p is inserted in the route r*/
 		
@@ -383,7 +395,13 @@ public class Route extends LinkedList<Customer> {
 			previous = closestCustomer;
 			newRoute.add(previous);
 		}
-		replaceAll((c) -> newRoute.get(indexOf(c)));
+		replaceAll((c) -> {
+			/* Updates customer route and route itself */
+			c.removeFromRoute();
+			Customer newCustomer = newRoute.get(indexOf(c));
+			newCustomer.insertInRoute(this);
+			return newCustomer;
+		});
 	}
 	
 }

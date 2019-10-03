@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.TreeSet;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -59,14 +60,11 @@ public class Main {
 	
 	@Parameter(names = {"-help", "--help"}, description = "Help with application parameters", help = true)
 	boolean help = false;
-		
-	@Parameter(names = {"-niter"}, description = "Number of iterations per local search", validateWith = PositiveInteger.class)
-	int numOfIterations = 1000000;
 	
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
 	
-	@Parameter(names = {"-gamak"}, description = "Closest neighbours size", validateWith = PositiveInteger.class)
+	@Parameter(names = {"-gammak"}, description = "Closest neighbours size", validateWith = PositiveInteger.class)
 	int gammak = 20;
 	
 	@Parameter(names = {"-gamma"}, description = "Display gamma set")
@@ -94,11 +92,14 @@ public class Main {
 		main.run();
 		if (!main.meanValuesList.isEmpty()) {
 			System.out.println("Mean values:");
-			main.meanValuesList.forEach((k,v) -> {
-				MeanValuesLabels symbol = MeanValuesLabels.valueOf(k);
-				Double meanValue = main.meanValuesList.getMean(k);
-				System.out.println(symbol.getLabel() + "\t" + symbol.convert(meanValue));			
+			TreeSet<MeanValuesLabels> sortedMeanValues = new TreeSet<>((sym1,sym2) -> {
+				return sym1.getPosition()-sym2.getPosition();
 			});
+			main.meanValuesList.forEach((k,v)->sortedMeanValues.add(MeanValuesLabels.valueOf(k)));
+			for (MeanValuesLabels symbol : sortedMeanValues) {
+				Double meanValue = main.meanValuesList.getMean(symbol.name());
+				System.out.println(symbol.convert(meanValue) + "\t" + symbol.getLabel());
+			}
 		}
 	}
 
@@ -231,10 +232,21 @@ public class Main {
 				System.out.println("Nanoseconds required to clone solution: " + elapsedNanos);
 		}
 		
-		LocalSearch localSearch = new LocalSearch(currentSolution, seed);
-		int improvementCount = localSearch.findLocalMinimum((s,i) -> i < numOfIterations && bestKnownSolutions.getBKSFraction(s) > 0.05);
+		/* First, find the shortest path in each route */
+		for (Route r : currentSolution)
+			r.findShortestPath(currentSolution.getInstance().getDistancematrix());
 		
-		Solution finalSolution = localSearch.getBestSolution();
+		int firstSPCost = currentSolution.getCost();
+		double firstSPFraction = bestKnownSolutions.getBKSFraction(currentSolution);
+		if (meanValues.containsKey("fspcost")) {
+			meanValuesList.addValueToMean("fspcost", firstSPFraction);
+			if (isVerbose)
+				System.out.printf("Final cost: %d (%.2f%% from optimal solution)\n",
+						firstSPCost, firstSPFraction*100);
+		}
+		
+		LocalSearch localSearch = new LocalSearch(currentSolution, seed);
+		int improvementCount = localSearch.findLocalMinimum();
 		
 		if (improvementCount == 0) {
 			if (isVerbose)
@@ -242,7 +254,7 @@ public class Main {
 			if (meanValues.containsKey("improvement"))
 				meanValuesList.addValueToMean("improvement", 0.0d);
 		} else {
-			double fraction = bestKnownSolutions.getBKSFraction(finalSolution);
+			double fraction = bestKnownSolutions.getBKSFraction(currentSolution);
 			double improvement = initialFraction - fraction;
 			if (meanValues.containsKey("improvement"))
 				meanValuesList.addValueToMean("improvement", improvement);

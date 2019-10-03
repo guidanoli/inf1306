@@ -164,6 +164,15 @@ public class Instance {
 	private final int capacity;
 	private final int numOfSets;
 	private final int numOfCustomers;
+	private final int k;
+	
+	/**
+	 * @return maximum number of customers in a gamma set
+	 * @see GammaSet
+	 */
+	public int getGammaK() {
+		return k;
+	}
 	
 	/**
 	 * @return the gamma set
@@ -254,6 +263,7 @@ public class Instance {
 		this.capacity = vCap;
 		this.customers = customers;
 		this.dmatrix = new DistanceMatrix(customers, depot); /* Must be before the gamma set initialization */
+		this.k = k;
 		
 		/* Constance variables */
 		numOfSets = sets.size();

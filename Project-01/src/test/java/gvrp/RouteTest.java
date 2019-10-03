@@ -325,8 +325,13 @@ class RouteTest {
 		assertNotNull(route,
 				() -> "Route must not be null");
 		for (int i = 0; i < route.size(); i++) {
+			Customer ci = route.get(i);
+			assertTrue(ci.isInRoute(),
+					() -> "All customers in route should be associated via the redundant field 'route', which should not be null");
+			assertEquals(route, ci.getRoute(),
+					() -> "All customers in route should be associated via the redundant field 'route', which should be equal to the route it's in");
 			for (int j = i+1; j < route.size(); j++) {
-				assertNotEquals(route.get(i), route.get(j),
+				assertNotEquals(ci, route.get(j),
 						() -> "There must not be repeated customers");
 			}
 		}
