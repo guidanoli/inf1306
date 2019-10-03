@@ -6,11 +6,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.StringJoiner;
 
-import gvrp.diff.InterOpt2Star;
-import gvrp.diff.IntraOpt2;
-import gvrp.diff.IntraRelocate;
-import gvrp.diff.Move;
-
 @SuppressWarnings("serial")
 public class Route extends LinkedList<Customer> {
 
@@ -269,20 +264,6 @@ public class Route extends LinkedList<Customer> {
 		return true;
 	}
 	
-	/**
-	 * Takes two random numbers and operate a random shift
-	 * @param r1 - random number #1
-	 * @param r2 - random number #2
-	 * @return move
-	 */
-	public Move shift(int r1, int r2) {
-		int size = size();
-		if (size < 2) return null;
-		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
-		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
-		add(p2, remove(p1)); /* 0 is in the beginning and size-1 is at the end */
-		return new IntraRelocate(this, p1, p2);
-	}
 		
 	/**
 	 * Takes two random numbers and operate a random shift inter route
@@ -367,43 +348,6 @@ public class Route extends LinkedList<Customer> {
 		r.recalculateDistanceMap(cz == null ? q : z, q+1, dmatrix); /* q increased by one because p is inserted in the route r*/
 		
 		return true;
-	}
-	
-	/**
-	 * Flips a random sequence within the route
-	 * @param r1 - random number #1
-	 * @param r2 - random number #2
-	 * @return move
-	 */
-	public Move opt2(int r1, int r2) {
-		int size = size();
-		if (size < 2) return null;
-		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
-		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
-		for (int i = 0; i < p2 - p1; i++)
-			add(p1, remove(p2)); /* flips sequence [p1,p2] */
-		return new IntraOpt2(this, p1, p2);
-	}
-	
-	/**
-	 * Flips a random sequence from two routes
-	 * @param r - another route
-	 * @param r1 - random number #1
-	 * @param r2 - random number #2
-	 * @return move
-	 */
-	public Move opt2Star(Route r, int r1, int r2) {
-		int size = size();
-		int rSize = r.size();
-		if (size < 2 || rSize < 2) return null;
-		int p = r1 % (size - 1); /* p in [0,size-1] */
-		int rP = r2 % (rSize - 1); /* rp in [0,rSize-1] */
-		/* swap tails */
-		for (int i = 0; i < rSize - 1 - rP; i++)
-			add(p + 1, r.removeLast());
-		for (int i = 0; i < size - 1 - p; i++)
-			r.add(rP + 1, removeLast());
-		return new InterOpt2Star(this, r, p, rP);
 	}
 	
 	public void findShortestPath(DistanceMatrix dmatrix) {
