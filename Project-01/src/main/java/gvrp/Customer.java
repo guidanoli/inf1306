@@ -56,6 +56,10 @@ public class Customer {
 		return id;
 	}
 	
+	public String toCompactString() {
+		return String.format("C%d", id);
+	}
+	
 	@Override
 	public String toString() {
 		return String.format("C%d = %s", id, pos.toString());

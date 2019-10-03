@@ -67,6 +67,10 @@ public class CustomerSet extends HashSet<Customer> {
 		return false;
 	}
 
+	public String toCompactString() {
+		return String.format("S%d", id);
+	}
+	
 	@Override
 	public String toString() {
 		return String.format("S%d = { demand = %d, customers = %s }", id, demand, super.toString());

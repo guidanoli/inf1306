@@ -66,6 +66,12 @@ public class Main {
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
 	
+	@Parameter(names = {"-gamak"}, description = "Closest neighbours size", validateWith = PositiveInteger.class)
+	int gammak = 20;
+	
+	@Parameter(names = {"-gamma"}, description = "Display gamma set")
+	boolean showgamma = false;
+	
 	MeanValuesList meanValuesList = new MeanValuesList();
 	BKS bestKnownSolutions;
 		
@@ -87,7 +93,7 @@ public class Main {
 		}
 		main.run();
 		if (!main.meanValuesList.isEmpty()) {
-			System.out.println("\nMean values:");
+			System.out.println("Mean values:");
 			main.meanValuesList.forEach((k,v) -> {
 				MeanValuesLabels symbol = MeanValuesLabels.valueOf(k);
 				Double meanValue = main.meanValuesList.getMean(k);
@@ -129,6 +135,7 @@ public class Main {
 						if (!isPersistant)
 							break;
 					}
+					System.out.println();
 				}
 				sc.close();
 			} catch (FileNotFoundException e) {
@@ -166,7 +173,8 @@ public class Main {
 		/* Try to parse instance file */
 		Instance instance = null;
 		try {
-			instance = Instance.parse(sc);
+			
+			instance = Instance.parse(sc, gammak, showgamma);
 		} catch (NoSuchElementException nsee) {
 			nsee.printStackTrace();
 			return false;

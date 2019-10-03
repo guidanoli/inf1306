@@ -21,6 +21,8 @@ public class Instance {
 		ArrayList<Customer> customers = new ArrayList<Customer>();
 		int fleetSize = 0;
 		int vehicleCapacity = 0;
+		int k = 20;
+		boolean showGamma = false;
 		
 		/**
 		 * Constructs the builder
@@ -119,6 +121,17 @@ public class Instance {
 			return this;
 		}
 		
+		public Builder setK(int k) {
+			if (k > 0)
+				this.k = k;
+			return this;
+		}
+		
+		public Builder showGamma(boolean show) {
+			this.showGamma = show;
+			return this;
+		}
+		
 		/**
 		 * Considers the first customer with no set associated as being the depot
 		 * @return instance object
@@ -136,25 +149,40 @@ public class Instance {
 				CustomerSet set = builder.build();
 				customerSets.add(set);
 			}
-			return new Instance(instanceName, depot, customers, customerSets, fleetSize, vehicleCapacity);
+			return new Instance(instanceName, depot, customers, customerSets, fleetSize, vehicleCapacity, k, showGamma);
 		}
 		
 	}
 	
-	private String name;
-	private Point depot;
-	private DistanceMatrix dmatrix;
-	private ArrayList<Customer> customers;
-	private ArrayList<CustomerSet> sets;
-	private int fleet;
-	private int capacity;
+	private final String name;
+	private final Point depot;
+	private final DistanceMatrix dmatrix;
+	private final GammaSet gamma;
+	private final ArrayList<Customer> customers;
+	private final ArrayList<CustomerSet> sets;
+	private final int fleet;
+	private final int capacity;
+	private final int numOfSets;
+	private final int numOfCustomers;
 	
+	/**
+	 * @return the gamma set
+	 * @see GammaSet
+	 */
+	public GammaSet getGammaSet() {
+		return gamma;
+	}
+	
+	/**
+	 * @return number of sets
+	 */
 	public int getNumberOfSets() {
-		return sets.size();
+		return numOfSets;
 	}
 	
 	/**
 	 * @return the distance matrix
+	 * @see DistanceMatrix
 	 */
 	public DistanceMatrix getDistancematrix() {
 		return dmatrix;
@@ -164,7 +192,7 @@ public class Instance {
 	 * @return number of customers
 	 */
 	public int getNumberOfCustomers() {
-		return customers.size();
+		return numOfCustomers;
 	}
 	
 	/**
@@ -216,28 +244,36 @@ public class Instance {
 	 * @param sets - customer sets
 	 * @param vCount - vehicle count
 	 * @param vCap - vehicle capacity
+	 * @param k - gamma set size
 	 */
-	private Instance(String name, Point depot, ArrayList<Customer> customers, ArrayList<CustomerSet> sets, int vCount, int vCap) {
-		this.dmatrix = new DistanceMatrix(customers, depot);
+	private Instance(String name, Point depot, ArrayList<Customer> customers, ArrayList<CustomerSet> sets, int vCount, int vCap, int k, boolean showGamma) {
 		this.name = name;
 		this.depot = depot;
 		this.sets = sets;
 		this.fleet = vCount;
 		this.capacity = vCap;
 		this.customers = customers;
+		this.dmatrix = new DistanceMatrix(customers, depot); /* Must be before the gamma set initialization */
+		
+		/* Constance variables */
+		numOfSets = sets.size();
+		numOfCustomers = customers.size();
+		
+		/* Gamma set initialization */
+		this.gamma = new GammaSet(this, k, showGamma);
 	}
-	
-	
 	
 	/**
 	 * Parse instance data from scanner
 	 * @param sc - scanner
+	 * @param k - gamma set size
+	 * @param showGamma - display gamma set
 	 * @return instance object
 	 * @throws NoSuchElementException
 	 * @throws IllegalStateException
 	 * @throws InputMismatchException
 	 */
-	public static Instance parse(Scanner sc) throws NoSuchElementException, IllegalStateException, InputMismatchException {
+	public static Instance parse(Scanner sc, int k, boolean showGamma) throws NoSuchElementException, IllegalStateException, InputMismatchException {
 		Builder builder = new Builder();
 		Pattern colons = Pattern.compile(":");
 		sc.next("NAME"); sc.next(colons);
@@ -298,6 +334,9 @@ public class Instance {
 			int demand = sc.nextInt();
 			builder.customerSetDemand(setId, demand);
 		}
+		/* Gamma set */
+		builder.setK(k)
+			.showGamma(showGamma);
 		/* Build instance */
 		return builder.build();
 	}

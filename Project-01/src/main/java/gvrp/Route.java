@@ -208,8 +208,8 @@ public class Route extends LinkedList<Customer> {
 	public boolean shiftSmart(int r1, int r2, DistanceMatrix dmatrix) {
 		int size = size();
 		if (size < 2) return false;
-		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
-		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
+		int p1 = Math.abs(r1) % (size - 1); /* p1 in [0,size-2] */
+		int p2 = p1 + 1 + Math.abs(r2) % (size - 1 - p1); /* p2 in [p1+1,size-1] */
 		
 		/*
 		 * Calculating the delta of route cost by the following expression
@@ -277,8 +277,8 @@ public class Route extends LinkedList<Customer> {
 		int size = size();
 		int rSize = r.size();
 		if (size < 2) return false; /* Can't leave this route empty */
-		int p = r1 % size; /* p in [0,size-1] */
-		int q = r2 % rSize; /* q in [0,rSize-1] */
+		int p = Math.abs(r1) % size; /* p in [0,size-1] */
+		int q = Math.abs(r2) % rSize; /* q in [0,rSize-1] */
 		
 		/*
 		 * Calculating the delta of route cost by the following expression
@@ -351,6 +351,8 @@ public class Route extends LinkedList<Customer> {
 	}
 	
 	public void findShortestPath(DistanceMatrix dmatrix) {
+		if (isEmpty()) return; /* Do nothing for empty routes */
+		
 		ArrayList<Customer> newRoute = new ArrayList<>(size());
 		recalculateDistanceMap(0, 0, dmatrix);
 		
