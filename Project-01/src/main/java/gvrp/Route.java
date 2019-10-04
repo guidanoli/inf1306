@@ -206,6 +206,7 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of customer in this route
 	 * @param q - position of destiny of the same customer (to the right)
 	 * @param dmatrix - distance matrix
+	 * @return success or not
 	 */
 	public boolean intraShift(int p, int q, DistanceMatrix dmatrix) {
 		int size = size();
@@ -280,6 +281,7 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of customer in this route
 	 * @param q - position of another customer in the route r
 	 * @param dmatrix - distance matrix
+	 * @return success or not
 	 */
 	public boolean interShift(Route r, int p, int q, DistanceMatrix dmatrix) {
 		if (this == r) return false;
@@ -361,7 +363,30 @@ public class Route extends LinkedList<Customer> {
 		
 		return true;
 	}
+
+	/**
+	 * Swaps two customers from the same route
+	 * @param p - position of customer from this route
+	 * @param q - position of the other customer in the route
+	 * @param dmatrix - distance matrix
+	 * @return success or not
+	 */
+	public boolean intraSwap(int p, int q, DistanceMatrix dmatrix) {
+		return false;
+	}
 	
+	/**
+	 * Swaps two customers from different routes
+	 * @param r - another route
+	 * @param p - position of customer from this route
+	 * @param q - position of customer in the other route
+	 * @param dmatrix - distance matrix
+	 * @return success or not
+	 */
+	public boolean interSwap(Route r, int p, int q, DistanceMatrix dmatrix) {
+		return false;
+	}
+		
 	public void findShortestPath(DistanceMatrix dmatrix) {
 		if (isEmpty()) return; /* Do nothing for empty routes */
 		

@@ -18,7 +18,7 @@ public class LocalSearch {
 	
 	/* Attempt to make a move with two customers and 
 	 * returns whether it was successful or not */
-	int numOfNeighbourhoodLevels = 1;
+	int numOfNeighbourhoodLevels = 2;
 	
 	public LocalSearch(Solution s0, long seed) {
 		this.solution = s0;
@@ -77,6 +77,9 @@ public class LocalSearch {
 							case 0:
 								improved = ri.intraShift(ciIndex, cjIndex, dmatrix);
 								break;
+							case 1:
+								improved = ri.intraSwap(ciIndex, cjIndex, dmatrix);
+								break;
 							default:
 								/* In case there are less neighbourhoods */
 								improved = ri.intraShift(ciIndex, cjIndex, dmatrix);
@@ -88,6 +91,9 @@ public class LocalSearch {
 						 */
 						switch (neighboorhoodLevel) {
 							case 0:
+								improved = ri.interShift(rj, ciIndex, cjIndex, dmatrix);
+								break;
+							case 1:
 								improved = ri.interShift(rj, ciIndex, cjIndex, dmatrix);
 								break;
 							default:
