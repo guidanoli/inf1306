@@ -103,6 +103,15 @@ class RouteTest {
 		}
 		
 		@RepeatedTest(value = SIZE*SIZE)
+		@DisplayName("after intra swap")
+		void testIntraSwap(RepetitionInfo info) {
+			int n = info.getCurrentRepetition() - 1;
+			boolean swapped = route.intraSwap(n % SIZE, n / SIZE, dmatrix);
+			if (swapped) assertTrue(initialCost > route.getCost(), () -> "should output a lower cost when improves");
+			else assertEquals(initialCost, route.getCost(), () -> "but stay the same when does not improve");
+		}
+		
+		@RepeatedTest(value = SIZE*SIZE)
 		@DisplayName("after inter shift")
 		void testInterShift(RepetitionInfo info) {
 			int size = info.getCurrentRepetition();
@@ -140,6 +149,49 @@ class RouteTest {
 			boolean shifted = route.interShift(anotherRoute, n % SIZE, n / SIZE, dmatrix);
 			int newCost = route.getCost() + anotherRoute.getCost();
 			if (shifted) assertTrue(initialCost > newCost, () -> "when improves");
+			else assertEquals(initialCost, newCost, () -> "but not when does not improve");
+			
+			checkDistanceMapOfRoute(anotherRoute);
+		}
+		
+		@RepeatedTest(value = SIZE*SIZE)
+		@DisplayName("after inter swap")
+		void testInterSwap(RepetitionInfo info) {
+			int size = info.getCurrentRepetition();
+			int n = size - 1;
+			
+			Route anotherRoute = newRoute(1);
+			ArrayList<Integer> x = new ArrayList<>(size), y = new ArrayList<>(size);
+			for(int i = 0; i < size; i++) {
+				x.add(i); y.add(i);
+			}
+			Collections.shuffle(x);
+			Collections.shuffle(y);
+			
+			ArrayList<Customer> customers = new ArrayList<>();
+			for(int i = 0; i < size; i++) {
+				Customer c = new Customer(SIZE+i+1);
+				new CustomerSet(SIZE+i+1, i+1).add(c);
+				c.setPosition(new Point(x.get(i), y.get(i)));
+				customers.add(c);
+			}
+			
+			ArrayList<Customer> al = new ArrayList<>(route);
+			al.addAll(customers);
+			Customer depotCustomer = new Customer(0);
+			depotCustomer.setPosition(depot);
+			new CustomerSet(0,0).add(depotCustomer);
+			al.add(depotCustomer);
+			dmatrix = new DistanceMatrix(al, depot);
+			for (Customer customer : customers) { 
+				boolean added = anotherRoute.addCustomer(customer, dmatrix);
+				assertTrue(added, "Could not add " + customer + " to " + anotherRoute);
+			}
+			initialCost = route.getCost() + anotherRoute.getCost();
+			
+			boolean swapped = route.interSwap(anotherRoute, n % SIZE, n / SIZE, dmatrix);
+			int newCost = route.getCost() + anotherRoute.getCost();
+			if (swapped) assertTrue(initialCost > newCost, () -> "when improves");
 			else assertEquals(initialCost, newCost, () -> "but not when does not improve");
 			
 			checkDistanceMapOfRoute(anotherRoute);
@@ -188,7 +240,7 @@ class RouteTest {
 		@DisplayName("after a shortest path algorithm")
 		void testShortestPath() {
 			initMultipleSetRoute();
-//			route.findShortestPath();
+			route.findShortestPath(dmatrix);
 			int finalCost = route.getCost();
 			assertTrue(finalCost <= initialCost,
 					() -> "cost should not increase");

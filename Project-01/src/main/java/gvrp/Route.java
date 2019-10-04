@@ -213,7 +213,7 @@ public class Route extends LinkedList<Customer> {
 		if (size < 2) return false;
 		
 		/* Filtering arbitrary input
-		 * such that 0 >= a < b > size */
+		 * such that 0 >= p < q > size */
 		p = Math.abs(p) % size;
 		q = Math.abs(q) % size;
 		p = Math.min(p, q);
@@ -231,7 +231,7 @@ public class Route extends LinkedList<Customer> {
 		 * ... -- x -- y -- ... -- q -- p -- w -- ...
 		 * 
 		 * delta = dxy + dqp + dpw - dxp - dpy - dqw
-		 * if p and q are neighbours, y == q
+		 * if p and q are neighbours, y === q
 		 * There is improvement iff delta < 0
 		 */
 		
@@ -287,7 +287,7 @@ public class Route extends LinkedList<Customer> {
 		if (this == r) return false;
 		int size = size();
 		int rSize = r.size();
-		if (size < 2) return false; /* Can't leave this route empty */
+		if (size < 2 || rSize == 0) return false; /* Can't leave this route empty */
 		
 		p = Math.abs(p) % size; /* p in [0,size-1] */
 		q = Math.abs(q) % rSize; /* q in [0,rSize-1] */
@@ -303,7 +303,7 @@ public class Route extends LinkedList<Customer> {
 		 * This route: ... -- x -- y -- ...
 		 * Route r: ... -- z -- p -- q -- ...
 		 * 
-		 * delta = dxy + dzp + dpq - dxp - dpy -dzq
+		 * delta = dxy + dzp + dpq - dxp - dpy - dzq
 		 * There is improvement iff delta < 0
 		 */
 		
@@ -372,7 +372,79 @@ public class Route extends LinkedList<Customer> {
 	 * @return success or not
 	 */
 	public boolean intraSwap(int p, int q, DistanceMatrix dmatrix) {
-		return false;
+		int size = size();
+		if (size < 2) return false;
+		
+		/* Filtering arbitrary input
+		 * such that 0 >= p < q > size */
+		p = Math.abs(p) % size;
+		q = Math.abs(q) % size;
+		p = Math.min(p, q);
+		q = Math.max(p, q);
+		
+		if (p == q) return false;
+				
+		/*
+		 * Calculating the delta of route cost by the following expression
+		 * 
+		 * BEFORE
+		 * ... -- x -- p -- y -- ... -- z -- q -- w -- ...
+		 * 
+		 * AFTER
+		 * ... -- x -- q -- y -- ... -- z -- p -- w -- ...
+		 * 
+		 * delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw
+		 * Restriction 1: if p and q are neighbours, y === z === p
+		 * There is improvement iff delta < 0
+		 */
+		
+		int x = p - 1, y = p + 1, z = q - 1, w = q + 1; /* vertices */
+		if (z < y) z = y; /* Restriction 1 */
+		/* if x == -1, x is depot. if w == size, w is depot */
+		int dxq, dqy, dzp, dpw, dxp, dpy, dzq, dqw; /* distances */
+		Customer cx = null, cy = null, cz = null, cw = null, cp = get(p), cq = get(q);
+		
+		if (x != -1) cx = get(x);
+		cy = get(y);
+		cz = get(z);
+		if (w != size) cw = get(w);
+		
+		if (cx == null) {
+			dxp = dmatrix.getDistanceFromDepot(cp);
+			dxq = dmatrix.getDistanceFromDepot(cq);
+		} else {
+			dxp = dmatrix.getDistanceBetween(cx, cp);
+			dxq = dmatrix.getDistanceBetween(cx, cq);
+		}
+		
+		if (cw == null) {
+			dpw = dmatrix.getDistanceFromDepot(cp);
+			dqw = dmatrix.getDistanceFromDepot(cq);
+		} else {
+			dpw = dmatrix.getDistanceBetween(cp, cw);
+			dqw = dmatrix.getDistanceBetween(cq, cw);
+		}
+		
+		dzq = dmatrix.getDistanceBetween(cz, cq);
+		dzp = dmatrix.getDistanceBetween(cz, cp);
+		dqy = dmatrix.getDistanceBetween(cq, cy);
+		dpy = dmatrix.getDistanceBetween(cp, cy);
+		
+		int delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw;
+		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		
+		/* Local search is then applied */
+		
+		/* The order of the operations
+		 * is really important here */
+		remove(q);
+		remove(p);
+		add(p, cq);
+		add(q, cp);
+		
+		recalculateDistanceMap(cx == null ? p : x, cw == null ? q : w, dmatrix);
+		
+		return true;
 	}
 	
 	/**
@@ -384,7 +456,108 @@ public class Route extends LinkedList<Customer> {
 	 * @return success or not
 	 */
 	public boolean interSwap(Route r, int p, int q, DistanceMatrix dmatrix) {
-		return false;
+		if (this == r) return false;
+		int size = size();
+		int rSize = r.size();
+		if (size == 0 || rSize == 0) return false;
+		
+		p = Math.abs(p) % size; /* p in [0,size-1] */
+		q = Math.abs(q) % rSize; /* q in [0,rSize-1] */
+		
+		/*
+		 * Calculating the delta of route cost by the following expression
+		 * 
+		 * BEFORE
+		 * This route: ... -- x -- p -- y -- ...
+		 * Route r: ... -- z -- q -- w -- ...
+		 * 
+		 * AFTER
+		 * This route: ... -- x -- q -- y -- ...
+		 * Route r: ... -- z -- p -- w -- ...
+		 * 
+		 * delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw
+		 * There is improvement iff delta < 0
+		 */
+		
+		int x = p - 1, y = p + 1, z = q - 1, w = q + 1; /* vertices */
+		/* if x,z == -1, x,z is depot. if y,w == size, y,w is depot */
+		int dxq, dqy, dzp, dpw, dxp, dpy, dzq, dqw; /* distances */
+		Customer cx = null, cy = null, cz = null, cw = null, cp = get(p), cq = r.get(q);
+		
+		/*
+		 * Checking if this route and route r have enough capacity
+		 */
+		
+		int demandGap = cp.getDemand() - cq.getDemand();
+		if (r.getCapacity() + demandGap > r.maxCap ||
+				getCapacity() - demandGap > maxCap)
+			return false;
+
+		/*
+		 * Checking if there is a cost improvement
+		 */
+		
+		if (x != -1) cx = get(x);
+		if (y != size) cy = get(y);
+		if (z != -1) cz = r.get(z);
+		if (w != rSize) cw = r.get(w);
+		
+		/* Can be computed multiple times */
+		int dp = dmatrix.getDistanceFromDepot(cp);
+		int dq = dmatrix.getDistanceFromDepot(cq);
+		
+		if (cx == null) {
+			dxp = dp;
+			dxq = dq;
+		} else {
+			dxp = dmatrix.getDistanceBetween(cx, cp);
+			dxq = dmatrix.getDistanceBetween(cx, cq);
+		}
+		
+		if (cy == null) {
+			dqy = dq;
+			dpy = dp;
+		} else {
+			dqy = dmatrix.getDistanceBetween(cq, cy);
+			dpy = dmatrix.getDistanceBetween(cp, cy);
+		}
+		
+		if (cz == null) {
+			dzq = dq;
+			dzp = dp;
+		} else {
+			dzq = dmatrix.getDistanceBetween(cz, cq);
+			dzp = dmatrix.getDistanceBetween(cz, cp);
+		}
+		
+		if (cw == null) {
+			dpw = dp;
+			dqw = dq;
+		} else {
+			dpw = dmatrix.getDistanceBetween(cp, cw);
+			dqw = dmatrix.getDistanceBetween(cq, cw);
+		}
+		
+		int delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw;
+		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		
+		/* Local search is then applied */
+		
+		/* The order of the operations
+		 * is really important here */
+		remove(p);
+		r.remove(q);
+		add(p, cq);
+		r.add(q, cp);
+		
+		/* Updates customers' route */
+		cp.insertInRoute(r);
+		cq.insertInRoute(this);
+		
+		recalculateDistanceMap(cx == null ? p : x, cy == null ? p : y, dmatrix);
+		r.recalculateDistanceMap(cz == null ? q : z, cw == null ? q : w, dmatrix);
+		
+		return true;
 	}
 		
 	public void findShortestPath(DistanceMatrix dmatrix) {
