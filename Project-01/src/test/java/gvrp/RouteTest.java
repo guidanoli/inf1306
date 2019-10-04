@@ -97,7 +97,7 @@ class RouteTest {
 		@DisplayName("after intra shift")
 		void testIntraShift(RepetitionInfo info) {
 			int n = info.getCurrentRepetition() - 1;
-			boolean shifted = route.shiftSmart(n % SIZE, n / SIZE, dmatrix);
+			boolean shifted = route.intraShift(n % SIZE, n / SIZE, dmatrix);
 			if (shifted) assertTrue(initialCost > route.getCost(), () -> "should output a lower cost when improves");
 			else assertEquals(initialCost, route.getCost(), () -> "but stay the same when does not improve");
 		}
@@ -137,7 +137,7 @@ class RouteTest {
 			}
 			initialCost = route.getCost() + anotherRoute.getCost();
 			
-			boolean shifted = route.shiftInterSmart(anotherRoute, n % SIZE, n / SIZE, dmatrix);
+			boolean shifted = route.interShift(anotherRoute, n % SIZE, n / SIZE, dmatrix);
 			int newCost = route.getCost() + anotherRoute.getCost();
 			if (shifted) assertTrue(initialCost > newCost, () -> "when improves");
 			else assertEquals(initialCost, newCost, () -> "but not when does not improve");

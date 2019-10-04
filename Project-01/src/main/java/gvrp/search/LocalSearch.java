@@ -75,11 +75,11 @@ public class LocalSearch {
 						 */
 						switch (neighboorhoodLevel) {
 							case 0:
-								improved = ri.shiftSmart(ciIndex, cjIndex, dmatrix);
+								improved = ri.intraShift(ciIndex, cjIndex, dmatrix);
 								break;
 							default:
 								/* In case there are less neighbourhoods */
-								improved = ri.shiftSmart(ciIndex, cjIndex, dmatrix);
+								improved = ri.intraShift(ciIndex, cjIndex, dmatrix);
 								break;
 						}
 					} else {
@@ -88,11 +88,11 @@ public class LocalSearch {
 						 */
 						switch (neighboorhoodLevel) {
 							case 0:
-								improved = ri.shiftInterSmart(rj, ciIndex, cjIndex, dmatrix);
+								improved = ri.interShift(rj, ciIndex, cjIndex, dmatrix);
 								break;
 							default:
 								/* In case there are less neighbourhoods */
-								improved = ri.shiftInterSmart(rj, ciIndex, cjIndex, dmatrix);
+								improved = ri.interShift(rj, ciIndex, cjIndex, dmatrix);
 								break;
 						}
 						if (improved) {

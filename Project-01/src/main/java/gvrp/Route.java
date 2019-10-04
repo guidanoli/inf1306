@@ -202,43 +202,42 @@ public class Route extends LinkedList<Customer> {
 	}
 	
 	/**
-	 * Takes two random numbers and operate a random shift
-	 * @param r1 - random number #1 (good between 0 and size-2)
-	 * @param r2 - random number #2 (good between 0 and size-1)
+	 * Shifts a customer within a route
+	 * @param p - position of customer in this route
+	 * @param q - position of destiny of the same customer (to the right)
 	 * @param dmatrix - distance matrix
 	 */
-	public boolean shiftSmart(int r1, int r2, DistanceMatrix dmatrix) {
+	public boolean intraShift(int p, int q, DistanceMatrix dmatrix) {
 		int size = size();
 		if (size < 2) return false;
 		
-		/* Filtering random input
-		 * such that 0 >= r1 < r2 > size */
-		r1 = Math.abs(r1);
-		r2 = Math.abs(r2);
-		r1 = Math.min(r1, r2);
-		r2 = Math.max(r1, r2);
+		/* Filtering arbitrary input
+		 * such that 0 >= a < b > size */
+		p = Math.abs(p) % size;
+		q = Math.abs(q) % size;
+		p = Math.min(p, q);
+		q = Math.max(p, q);
 		
-		int p1 = r1 % (size - 1); /* p1 in [0,size-2] */
-		int p2 = p1 + 1 + r2 % (size - 1 - p1); /* p2 in [p1+1,size-1] */
-		
+		if (p == q) return false;
+				
 		/*
 		 * Calculating the delta of route cost by the following expression
 		 * 
 		 * BEFORE
-		 * ... -- x -- p1 -- y -- ... -- p2 -- w -- ...
+		 * ... -- x -- p -- y -- ... -- q -- w -- ...
 		 * 
 		 * AFTER
-		 * ... -- x -- y -- ... -- p2 -- p1 -- w -- ...
+		 * ... -- x -- y -- ... -- q -- p -- w -- ...
 		 * 
-		 * delta = dxy + dp2p1 + dp1w - dxp1 - dp1y - dp2w
-		 * if p1 and p2 are neighbours, y == p2
+		 * delta = dxy + dqp + dpw - dxp - dpy - dqw
+		 * if p and q are neighbours, y == q
 		 * There is improvement iff delta < 0
 		 */
 		
-		int x = p1 - 1, y = p1 + 1, w = p2 + 1; /* vertices */
+		int x = p - 1, y = p + 1, w = q + 1; /* vertices */
 		/* if x == -1, x is depot. if w == size, w is depot */
-		int dxy, dp2p1, dp1w, dxp1, dp1y, dp2w; /* distances */
-		Customer cx = null, cy = null, cw = null, cp1 = get(p1), cp2 = get(p2);
+		int dxy, dqp, dpw, dxp, dpy, dqw; /* distances */
+		Customer cx = null, cy = null, cw = null, cp = get(p), cq = get(q);
 		
 		if (x != -1) cx = get(x);
 		cy = get(y);
@@ -246,49 +245,50 @@ public class Route extends LinkedList<Customer> {
 		
 		if (cx == null) {
 			dxy = dmatrix.getDistanceFromDepot(cy);
-			dxp1 = dmatrix.getDistanceFromDepot(cp1);
+			dxp = dmatrix.getDistanceFromDepot(cp);
 		} else {
 			dxy = dmatrix.getDistanceBetween(cx, cy);
-			dxp1 = dmatrix.getDistanceBetween(cx, cp1);
+			dxp = dmatrix.getDistanceBetween(cx, cp);
 		}
 		
 		if (cw == null) {
-			dp1w = dmatrix.getDistanceFromDepot(cp1);
-			dp2w = dmatrix.getDistanceFromDepot(cp2);
+			dpw = dmatrix.getDistanceFromDepot(cp);
+			dqw = dmatrix.getDistanceFromDepot(cq);
 		} else {
-			dp1w = dmatrix.getDistanceBetween(cp1, cw);
-			dp2w = dmatrix.getDistanceBetween(cp2, cw);
+			dpw = dmatrix.getDistanceBetween(cp, cw);
+			dqw = dmatrix.getDistanceBetween(cq, cw);
 		}
 		
-		dp2p1 = dmatrix.getDistanceBetween(cp1, cp2);
-		dp1y = dmatrix.getDistanceBetween(cp1, cy);
+		dqp = dmatrix.getDistanceBetween(cp, cq);
+		dpy = dmatrix.getDistanceBetween(cp, cy);
 		
-		int delta = dxy + dp2p1 + dp1w - dxp1 - dp1y - dp2w;
+		int delta = dxy + dqp + dpw - dxp - dpy - dqw;
 		if (delta >= 0) return false; /* does not accept solutions of same cost */
 		
 		/* Local search is then applied */
-		add(p2, remove(p1));
+		add(q, remove(p));
 		
-		recalculateDistanceMap(cx == null ? p1 : x, cw == null ? p2 : w, dmatrix);
+		recalculateDistanceMap(cx == null ? p : x, cw == null ? q : w, dmatrix);
 		
 		return true;
 	}
 	
 		
 	/**
-	 * Takes two random numbers and operate a random shift inter route
+	 * Shifts a customer from one route to another
 	 * @param r - another route
-	 * @param r1 - random number #1 (good between 0 and size-1)
-	 * @param r2 - random number #2 (good between 0 and r.size-1)
+	 * @param p - position of customer in this route
+	 * @param q - position of another customer in the route r
 	 * @param dmatrix - distance matrix
 	 */
-	public boolean shiftInterSmart(Route r, int r1, int r2, DistanceMatrix dmatrix) {
+	public boolean interShift(Route r, int p, int q, DistanceMatrix dmatrix) {
 		if (this == r) return false;
 		int size = size();
 		int rSize = r.size();
 		if (size < 2) return false; /* Can't leave this route empty */
-		int p = Math.abs(r1) % size; /* p in [0,size-1] */
-		int q = Math.abs(r2) % rSize; /* q in [0,rSize-1] */
+		
+		p = Math.abs(p) % size; /* p in [0,size-1] */
+		q = Math.abs(q) % rSize; /* q in [0,rSize-1] */
 		
 		/*
 		 * Calculating the delta of route cost by the following expression
