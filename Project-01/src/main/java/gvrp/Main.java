@@ -17,9 +17,9 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.validators.PositiveInteger;
 
-import gvrp.analysis.BKS;
-import gvrp.analysis.MeanValuesLabels;
-import gvrp.analysis.MeanValuesList;
+import gvrp.analysis.BestKnownSolutions;
+import gvrp.analysis.AnalyticalValuesLabels;
+import gvrp.analysis.AnalyticalValuesList;
 import gvrp.construction.SolutionFactory;
 import gvrp.search.LocalSearch;
 
@@ -55,7 +55,7 @@ public class Main {
 	@Parameter(names = "-constructive", description = "Constructive metaheuristic")
 	String constructiveMetaheuristic = "greedy";
 	
-	@DynamicParameter(names = "-M", description = "Get mean of certain attribute")
+	@DynamicParameter(names = {"-M", "-A"}, description = "Get analytical data after simulations")
 	Map<String, String> meanValues = new HashMap<>();
 	
 	@Parameter(names = {"-help", "--help"}, description = "Help with application parameters", help = true)
@@ -70,8 +70,8 @@ public class Main {
 	@Parameter(names = {"-gamma"}, description = "Display gamma set")
 	boolean showgamma = false;
 	
-	MeanValuesList meanValuesList = new MeanValuesList();
-	BKS bestKnownSolutions;
+	AnalyticalValuesList meanValuesList = new AnalyticalValuesList();
+	BestKnownSolutions bestKnownSolutions;
 		
 	/**
 	 * Runs the GVRP solver according to parameters parsed in command line
@@ -91,14 +91,18 @@ public class Main {
 		}
 		main.run();
 		if (!main.meanValuesList.isEmpty()) {
-			System.out.println("Mean values:");
-			TreeSet<MeanValuesLabels> sortedMeanValues = new TreeSet<>((sym1,sym2) -> {
+			System.out.println("Analytics:");
+			TreeSet<AnalyticalValuesLabels> sortedMeanValues = new TreeSet<>((sym1,sym2) -> {
 				return sym1.getPosition()-sym2.getPosition();
 			});
-			main.meanValuesList.forEach((k,v)->sortedMeanValues.add(MeanValuesLabels.valueOf(k)));
-			for (MeanValuesLabels symbol : sortedMeanValues) {
-				Double meanValue = main.meanValuesList.getMean(symbol.name());
-				System.out.println(symbol.convert(meanValue) + "\t" + symbol.getLabel());
+			main.meanValuesList.forEach((k,v)->sortedMeanValues.add(AnalyticalValuesLabels.valueOf(k)));
+			for (AnalyticalValuesLabels symbol : sortedMeanValues) {
+				Double analyticalValue;
+				if (symbol.takesTheMean())
+					analyticalValue = main.meanValuesList.getMean(symbol.name());
+				else
+					analyticalValue = main.meanValuesList.getSum(symbol.name());
+				System.out.println(symbol.convert(analyticalValue) + "\t" + symbol.getLabel());
 			}
 		}
 	}
@@ -111,7 +115,7 @@ public class Main {
 		try {
 			File bksFile = new File(bksPath);
 			Scanner bksScanner = new Scanner(bksFile);
-			bestKnownSolutions = new BKS(bksScanner);
+			bestKnownSolutions = new BestKnownSolutions(bksScanner);
 			bksScanner.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -217,9 +221,9 @@ public class Main {
 		int initialCost = initialSolution.getCost();
 		double initialFraction = bestKnownSolutions.getBKSFraction(initialSolution);
 		if (meanValues.containsKey("iscost")) {
-			meanValuesList.addValueToMean("iscost", initialFraction);
+			meanValuesList.addValueToList("iscost", initialFraction);
 			if (isVerbose)
-				System.out.printf("Initial cost: %d (%.2f%% from optimal solution)\n", initialCost, initialFraction*100);
+				System.out.printf("Initial cost: %d %s\n", initialCost, formatBKSComparison(initialFraction));
 		}
 		
 		
@@ -227,7 +231,7 @@ public class Main {
 		Solution currentSolution = new Solution(initialSolution);
 		elapsedNanos = System.nanoTime() - elapsedNanos;
 		if (meanValues.containsKey("sclonetime")) {
-			meanValuesList.addValueToMean("sclonetime", (double) elapsedNanos);
+			meanValuesList.addValueToList("sclonetime", (double) elapsedNanos);
 			if (isVerbose)
 				System.out.println("Nanoseconds required to clone solution: " + elapsedNanos);
 		}
@@ -239,10 +243,9 @@ public class Main {
 		int firstSPCost = currentSolution.getCost();
 		double firstSPFraction = bestKnownSolutions.getBKSFraction(currentSolution);
 		if (meanValues.containsKey("fspcost")) {
-			meanValuesList.addValueToMean("fspcost", firstSPFraction);
+			meanValuesList.addValueToList("fspcost", firstSPFraction);
 			if (isVerbose)
-				System.out.printf("Final cost: %d (%.2f%% from optimal solution)\n",
-						firstSPCost, firstSPFraction*100);
+				System.out.printf("Final cost: %d %s\n", firstSPCost, formatBKSComparison(firstSPFraction));
 		}
 		
 		LocalSearch localSearch = new LocalSearch(currentSolution, seed);
@@ -252,12 +255,12 @@ public class Main {
 			if (isVerbose)
 				System.out.println("Could not find local minima.");
 			if (meanValues.containsKey("improvement"))
-				meanValuesList.addValueToMean("improvement", 0.0d);
+				meanValuesList.addValueToList("improvement", 0.0d);
 		} else {
 			double fraction = bestKnownSolutions.getBKSFraction(currentSolution);
 			double improvement = initialFraction - fraction;
 			if (meanValues.containsKey("improvement"))
-				meanValuesList.addValueToMean("improvement", improvement);
+				meanValuesList.addValueToList("improvement", improvement);
 			if (isVerbose)
 				System.out.printf("Found local minima (%d improvements --- %.4f%% of improvement)\n", improvementCount, improvement*100);
 		}
@@ -265,14 +268,23 @@ public class Main {
 		int finalCost = currentSolution.getCost();
 		double finalFraction = bestKnownSolutions.getBKSFraction(currentSolution);
 		if (meanValues.containsKey("fscost")) {
-			meanValuesList.addValueToMean("fscost", finalFraction);
+			meanValuesList.addValueToList("fscost", finalFraction);
 			if (isVerbose)
-				System.out.printf("Final cost: %d (%.2f%% from optimal solution)\n", finalCost, finalFraction*100);
+				System.out.printf("Final cost: %d %s\n", finalCost, formatBKSComparison(finalFraction));
 		}
 		
 		return true;
 	}
 
+	public String formatBKSComparison(double fraction) {
+		if (fraction == 0) {
+			if (meanValues.containsKey("optcnt"))
+				meanValuesList.addValueToList("optcnt", 1.0);
+			return "(Optimal solution)";
+		}
+		return String.format("(%.2f%% from optimal solution)", fraction*100);
+	}
+	
 	public File promptForFolder() {
 		JFileChooser fc = new JFileChooser();
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);

@@ -9,3 +9,5 @@ iscost=true
 fscost=true
 -seed
 0
+-A
+optcnt=true

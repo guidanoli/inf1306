@@ -18,7 +18,7 @@ public class LocalSearch {
 	
 	/* Attempt to make a move with two customers and 
 	 * returns whether it was successful or not */
-	int numOfNeighbourhoodLevels = 2;
+	int numOfNeighbourhoodLevels = 3;
 	
 	public LocalSearch(Solution s0, long seed) {
 		this.solution = s0;
@@ -80,9 +80,8 @@ public class LocalSearch {
 							case 1:
 								improved = ri.intraSwap(ciIndex, cjIndex, dmatrix);
 								break;
-							default:
-								/* In case there are less neighbourhoods */
-								improved = ri.intraSwap(ciIndex, cjIndex, dmatrix);
+							case 2:
+								improved = ri.intra2Opt(ciIndex, cjIndex, dmatrix);
 								break;
 						}
 					} else {
@@ -96,9 +95,8 @@ public class LocalSearch {
 							case 1:
 								improved = ri.interSwap(rj, ciIndex, cjIndex, dmatrix);
 								break;
-							default:
-								/* In case there are less neighbourhoods */
-								improved = ri.interSwap(rj, ciIndex, cjIndex, dmatrix);
+							case 2:
+								improved = ri.inter2OptStar(rj, ciIndex, cjIndex, dmatrix);
 								break;
 						}
 						if (improved) {

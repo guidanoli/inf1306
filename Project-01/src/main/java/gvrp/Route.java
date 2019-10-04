@@ -560,6 +560,30 @@ public class Route extends LinkedList<Customer> {
 		return true;
 	}
 		
+
+	/**
+	 * Reverses a sequence of customers from the same route
+	 * @param p - position of the first customer from this route
+	 * @param q - position of the second customer in the route
+	 * @param dmatrix - distance matrix
+	 * @return success or not
+	 */
+	public boolean intra2Opt(int p, int q, DistanceMatrix dmatrix) {
+		return false;
+	}
+	
+	/**
+	 * Swaps two customers from different routes
+	 * @param r - another route
+	 * @param p - position of customer from this route
+	 * @param q - position of customer in the other route
+	 * @param dmatrix - distance matrix
+	 * @return success or not
+	 */
+	public boolean inter2OptStar(Route r, int p, int q, DistanceMatrix dmatrix) {
+		return false;
+	}
+	
 	public void findShortestPath(DistanceMatrix dmatrix) {
 		if (isEmpty()) return; /* Do nothing for empty routes */
 		

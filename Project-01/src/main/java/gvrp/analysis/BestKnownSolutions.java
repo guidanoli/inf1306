@@ -12,7 +12,7 @@ import gvrp.Solution;
  * @author guidanoli
  *
  */
-public class BKS {
+public class BestKnownSolutions {
 
 	HashMap<String, Double> map = new HashMap<String, Double>();
 	
@@ -20,7 +20,7 @@ public class BKS {
 	 * Parses input from scanner until no more valid tokens are available 
 	 * @param sc - scanner
 	 */
-	public BKS(Scanner sc) {
+	public BestKnownSolutions(Scanner sc) {
 		while (sc.hasNext()) {
 			String instanceName = sc.next();
 			if (!sc.hasNextDouble()) return; /* end parsing */
