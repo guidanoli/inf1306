@@ -264,7 +264,8 @@ public class Route extends LinkedList<Customer> {
 		dpy = dmatrix.getDistanceBetween(cp, cy);
 		
 		int delta = dxy + dqp + dpw - dxp - dpy - dqw;
-		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		/* Does not accept solutions of same cost */
+		if (delta >= 0) return false;
 		
 		/* Local search is then applied */
 		add(q, remove(p));
@@ -289,8 +290,8 @@ public class Route extends LinkedList<Customer> {
 		int rSize = r.size();
 		if (size < 2 || rSize == 0) return false; /* Can't leave this route empty */
 		
-		p = Math.abs(p) % size; /* p in [0,size-1] */
-		q = Math.abs(q) % rSize; /* q in [0,rSize-1] */
+		p = Math.abs(p) % size; /* p in [0,size) */
+		q = Math.abs(q) % rSize; /* q in [0,rSize) */
 		
 		/*
 		 * Calculating the delta of route cost by the following expression
@@ -351,7 +352,8 @@ public class Route extends LinkedList<Customer> {
 		dpq = dmatrix.getDistanceBetween(cp, cq);
 		
 		int delta = dxy + dzp + dpq - dxp - dpy - dzq;
-		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		/* Does not accept solutions of same cost */
+		if (delta >= 0) return false;
 		
 		/* Local search is then applied */
 		r.add(q, remove(p));
@@ -434,7 +436,8 @@ public class Route extends LinkedList<Customer> {
 		dpy = dmatrix.getDistanceBetween(cp, cy);
 		
 		int delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw;
-		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		/* Does not accept solutions of same cost */
+		if (delta >= 0) return false;
 		
 		/* Local search is then applied */
 		
@@ -464,8 +467,8 @@ public class Route extends LinkedList<Customer> {
 		int rSize = r.size();
 		if (size == 0 || rSize == 0) return false;
 		
-		p = Math.abs(p) % size; /* p in [0,size-1] */
-		q = Math.abs(q) % rSize; /* q in [0,rSize-1] */
+		p = Math.abs(p) % size; /* p in [0,size) */
+		q = Math.abs(q) % rSize; /* q in [0,rSize) */
 		
 		/*
 		 * Calculating the delta of route cost by the following expression
@@ -542,7 +545,8 @@ public class Route extends LinkedList<Customer> {
 		}
 		
 		int delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw;
-		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		/* Does not accept solutions of same cost */
+		if (delta >= 0) return false;
 		
 		/* Local search is then applied */
 		
@@ -625,7 +629,8 @@ public class Route extends LinkedList<Customer> {
 		}
 		
 		int delta = dxq + dpy - dxp - dqy;
-		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		/* Does not accept solutions of same cost */
+		if (delta >= 0) return false;
 		
 		/* Local search is then applied */
 		int stackSize = q-p+1;
@@ -650,69 +655,101 @@ public class Route extends LinkedList<Customer> {
 		if (this == r) return false;
 		int size = size();
 		int rSize = r.size();
-		if (size < 2 && rSize < 2) return false;
 		
-		p = Math.abs(p) % size; /* p in [0,size-1] */
-		q = Math.abs(q) % rSize; /* q in [0,rSize-1] */
-				
-		if (p == size-1 || q == rSize-1) return false; /* Not feasible */
-		if (p == 0 && q == 0) return false; /* Equivalent to interSwap */
+		/* No route can have less than 2 customers and both can't have exactly 2
+		 * This would basically lead to an inter route swap in p and q, which
+		 * should be covered already
+		 */
+		if ((size == 2 && rSize == 2) || size < 2 || rSize < 2) return false;
 		
-		/*
-		 * Calculating the delta of route cost by the following expression
+		/* Filtering arbitrary input such that 0 >= p > size and 0 >= q > rSize
+		 */
+		p = Math.abs(p) % size; /* p in [0,size) */
+		q = Math.abs(q) % rSize; /* q in [0,rSize) */
+
+		/* If x or y is the depot, this would basically lead to an inter route
+		 * relocate or an inter route swap, which should be covered already
+		 */
+		if (p == 0 || q == 0) return false;
+		
+		/* If p and q are the last customers in their respective routes,
+		 * then this would basically lead to am inter route swap  in p and q,
+		 * which should be covered already
+		 */
+		if (p == size-1 && q == rSize-1) return false;
+		
+		/* Calculating the delta of route cost by the following expression
 		 * 
 		 * BEFORE
-		 * This route: ... -- p -- x --> ...
-		 * Route r: ... -- q -- y -->>> ...
+		 * This route: ... -- x -- p --> ...
+		 * Route r: ... -- y -- q -->>> ...
 		 * 
 		 * AFTER
-		 * This route: ... -- p -- y -->>> ...
-		 * Route r: ... -- q -- x --> ...
+		 * This route: ... -- x -- q -->>> ...
+		 * Route r: ... -- y -- p --> ...
 		 * 
-		 * delta = dpy + dqx - dpx - dqy
+		 * delta = dxq + dyp - dxp - dyq
 		 * There is improvement iff delta < 0
 		 */
 		
-		int x = p + 1, y = p + 1; /* vertices --- can't be depot! */
-		int dpy, dqx, dpx, dqy; /* distances */
-		Customer cx = get(x), cy = get(y), cp = get(p), cq = r.get(q);
+		int x = p - 1, y = q - 1; /* vertices --- can't be depot! */
+		int dxq, dyp, dxp, dyq; /* distances */
+		Customer cx = get(x), cy = r.get(y), cp = get(p), cq = r.get(q);
 		
-		/*
-		 * Checking if this route and route r have enough capacity
+		/* Checking if this route and route r would have enough capacity
 		 */
 
+		/* demandGap = sum(i=[p,size), this.get(i).getDemand()) -
+		 * 				sum(j=[q,rSize), this.get(j).getDemand())
+		 */
 		int demandGap = 0;
-		Iterator<Customer> iter = listIterator(x), rIter = listIterator(y);
+		
+		Iterator<Customer> iter = listIterator(p), rIter = r.listIterator(q);
 		while (iter.hasNext()) demandGap += iter.next().getDemand();
 		while (rIter.hasNext()) demandGap -= rIter.next().getDemand();
-				
-		if (r.getCapacity() + demandGap > r.maxCap ||
-				getCapacity() - demandGap > maxCap)
+		
+		/* There is a relationship between the demandGap and
+		 * the resulting routes' capacities
+		 * 
+		 * this* = this - {p...} + {q...}
+		 * r* = r - {q...} + {p...}
+		 * 
+		 * this*.cap = this.cap - demandGap
+		 * r*.cap = r.cap + demandGap
+		 * 
+		 * Move is infeasible if this*.cap > maxCap || r*.cap > maxCap
+		 */
+		if (getCapacity() - demandGap > maxCap ||
+			r.getCapacity() + demandGap > maxCap)
 			return false;
 		
-		/*
-		 * Checking if there is a cost improvement
+		/* Checking if there is a cost improvement
 		 */
 		
-		dqx = dmatrix.getDistanceBetween(cq, cx);
-		dpx = dmatrix.getDistanceBetween(cp, cx);
-		dqy = dmatrix.getDistanceBetween(cq, cy);
-		dpy = dmatrix.getDistanceBetween(cp, cy);
+		dxq = dmatrix.getDistanceBetween(cx, cq);
+		dxp = dmatrix.getDistanceBetween(cx, cp);
+		dyq = dmatrix.getDistanceBetween(cy, cq);
+		dyp = dmatrix.getDistanceBetween(cy, cp);
 		
-		int delta = dpy + dqx - dpx - dqy;
-		if (delta >= 0) return false; /* accepts solutions of same cost */
+		int delta = dxq + dyp - dxp - dyq;
+		/* Does not accept solutions of same cost */
+		if (delta >= 0) return false;
 		
-		/* Local search is then applied */
+		/* Local search is then applied 
+		 */
 		
-		int stackSize = size - x;
-		int rStackSize = rSize - y;
+		int stackSize = size - p;
+		int rStackSize = rSize - q;
+		
+		/* Stacks will store route tails
+		 */
 		Customer [] stack = new Customer[stackSize],
 				rStack = new Customer[rStackSize];
 		
-		/* The order of the operations
-		 * is really important here */
-		for (int i = 0; i < stackSize; i++) stack[i] = remove(x);
-		for (int i = 0; i < rStackSize; i++) rStack[i] = r.remove(y);
+		/* The order of the operations is really important here
+		 */
+		for (int i = 0; i < stackSize; i++) stack[i] = remove(p);
+		for (int i = 0; i < rStackSize; i++) rStack[i] = r.remove(q);
 		for (int i = 0; i < rStackSize; i++) {
 			addLast(rStack[i]);
 			rStack[i].insertInRoute(this);
@@ -722,9 +759,8 @@ public class Route extends LinkedList<Customer> {
 			stack[i].insertInRoute(r);
 		}
 		
-		int stackGap = stackSize - rStackSize;
-		recalculateDistanceMap(p, size - stackGap - 1, dmatrix);
-		r.recalculateDistanceMap(q, rSize + stackGap - 1, dmatrix);
+		recalculateDistanceMap(x, p + rStackSize - 1, dmatrix);
+		r.recalculateDistanceMap(y, q + stackSize - 1, dmatrix);
 		
 		return true;
 	}
