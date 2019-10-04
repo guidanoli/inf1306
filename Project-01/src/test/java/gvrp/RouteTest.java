@@ -110,6 +110,15 @@ class RouteTest {
 			if (swapped) assertTrue(initialCost > route.getCost(), () -> "should output a lower cost when improves");
 			else assertEquals(initialCost, route.getCost(), () -> "but stay the same when does not improve");
 		}
+
+		@RepeatedTest(value = SIZE*SIZE)
+		@DisplayName("after intra 2-Opt")
+		void testIntra2Opt(RepetitionInfo info) {
+			int n = info.getCurrentRepetition() - 1;
+			boolean reversed = route.intra2Opt(n % SIZE, n / SIZE, dmatrix);
+			if (reversed) assertTrue(initialCost > route.getCost(), () -> "should output a lower cost when improves");
+			else assertEquals(initialCost, route.getCost(), () -> "but stay the same when does not improve");
+		}
 		
 		@RepeatedTest(value = SIZE*SIZE)
 		@DisplayName("after inter shift")

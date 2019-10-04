@@ -373,7 +373,10 @@ public class Route extends LinkedList<Customer> {
 	 */
 	public boolean intraSwap(int p, int q, DistanceMatrix dmatrix) {
 		int size = size();
-		if (size < 2) return false;
+		if (size < 3) return false;
+		/* with size < 2, it's impossible
+		 * with size = 3, it's basically a shift
+		 */
 		
 		/* Filtering arbitrary input
 		 * such that 0 >= p < q > size */
@@ -569,7 +572,70 @@ public class Route extends LinkedList<Customer> {
 	 * @return success or not
 	 */
 	public boolean intra2Opt(int p, int q, DistanceMatrix dmatrix) {
-		return false;
+		int size = size();
+		if (size < 4) return false;
+		/* with size < 2, it's impossible
+		 * with size = 2, it's basically a shift
+		 * with size = 3, it's basically a swap */
+		
+		/* Filtering arbitrary input
+		 * such that 0 >= p < q > size */
+		p = Math.abs(p) % size;
+		q = Math.abs(q) % size;
+		p = Math.min(p, q);
+		q = Math.max(p, q);
+		
+		if (p == q) return false;
+				
+		/*
+		 * Calculating the delta of route cost by the following expression
+		 * 
+		 * BEFORE
+		 * ... -- x -- p -- ...>>>... -- q -- y -- ...
+		 * 
+		 * AFTER
+		 * ... -- x -- q -- ...<<<... -- p -- y -- ...
+		 * 
+		 * delta = dxq + dpy - dxp - dqy
+		 * There is improvement iff delta < 0
+		 */
+		
+		int x = p - 1, y = q + 1; /* vertices */
+		/* if x == -1, x is depot. if y == size, y is depot */
+		int dxq, dpy, dxp, dqy; /* distances */
+		Customer cx = null, cy = null, cp = get(p), cq = get(q);
+		
+		if (x != -1) cx = get(x);
+		if (y != size) cy = get(y);
+		
+		if (cx == null) {
+			dxp = dmatrix.getDistanceFromDepot(cp);
+			dxq = dmatrix.getDistanceFromDepot(cq);
+		} else {
+			dxp = dmatrix.getDistanceBetween(cx, cp);
+			dxq = dmatrix.getDistanceBetween(cx, cq);
+		}
+		
+		if (cy == null) {
+			dpy = dmatrix.getDistanceFromDepot(cp);
+			dqy = dmatrix.getDistanceFromDepot(cq);
+		} else {
+			dpy = dmatrix.getDistanceBetween(cp, cy);
+			dqy = dmatrix.getDistanceBetween(cq, cy);
+		}
+		
+		int delta = dxq + dpy - dxp - dqy;
+		if (delta >= 0) return false; /* does not accept solutions of same cost */
+		
+		/* Local search is then applied */
+		int stackSize = q-p+1;
+		Customer [] stack = new Customer[stackSize];
+		for (int i = 0; i < stackSize; i++) stack[i] = remove(p);
+		for (int i = 0; i < stackSize; i++) add(p, stack[i]);
+		
+		recalculateDistanceMap(cx == null ? p : x, cy == null ? q : y, dmatrix);
+		
+		return true;
 	}
 	
 	/**
