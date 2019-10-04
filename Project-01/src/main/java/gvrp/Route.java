@@ -639,7 +639,7 @@ public class Route extends LinkedList<Customer> {
 	}
 	
 	/**
-	 * Swaps two customers from different routes
+	 * Swaps two sequences from different routes
 	 * @param r - another route
 	 * @param p - position of customer from this route
 	 * @param q - position of customer in the other route
@@ -647,7 +647,86 @@ public class Route extends LinkedList<Customer> {
 	 * @return success or not
 	 */
 	public boolean inter2OptStar(Route r, int p, int q, DistanceMatrix dmatrix) {
-		return false;
+		if (this == r) return false;
+		int size = size();
+		int rSize = r.size();
+		if (size < 2 && rSize < 2) return false;
+		
+		p = Math.abs(p) % size; /* p in [0,size-1] */
+		q = Math.abs(q) % rSize; /* q in [0,rSize-1] */
+				
+		if (p == size-1 || q == rSize-1) return false; /* Not feasible */
+		if (p == 0 && q == 0) return false; /* Equivalent to interSwap */
+		
+		/*
+		 * Calculating the delta of route cost by the following expression
+		 * 
+		 * BEFORE
+		 * This route: ... -- p -- x --> ...
+		 * Route r: ... -- q -- y -->>> ...
+		 * 
+		 * AFTER
+		 * This route: ... -- p -- y -->>> ...
+		 * Route r: ... -- q -- x --> ...
+		 * 
+		 * delta = dpy + dqx - dpx - dqy
+		 * There is improvement iff delta < 0
+		 */
+		
+		int x = p + 1, y = p + 1; /* vertices --- can't be depot! */
+		int dpy, dqx, dpx, dqy; /* distances */
+		Customer cx = get(x), cy = get(y), cp = get(p), cq = r.get(q);
+		
+		/*
+		 * Checking if this route and route r have enough capacity
+		 */
+
+		int demandGap = 0;
+		Iterator<Customer> iter = listIterator(x), rIter = listIterator(y);
+		while (iter.hasNext()) demandGap += iter.next().getDemand();
+		while (rIter.hasNext()) demandGap -= rIter.next().getDemand();
+				
+		if (r.getCapacity() + demandGap > r.maxCap ||
+				getCapacity() - demandGap > maxCap)
+			return false;
+		
+		/*
+		 * Checking if there is a cost improvement
+		 */
+		
+		dqx = dmatrix.getDistanceBetween(cq, cx);
+		dpx = dmatrix.getDistanceBetween(cp, cx);
+		dqy = dmatrix.getDistanceBetween(cq, cy);
+		dpy = dmatrix.getDistanceBetween(cp, cy);
+		
+		int delta = dpy + dqx - dpx - dqy;
+		if (delta >= 0) return false; /* accepts solutions of same cost */
+		
+		/* Local search is then applied */
+		
+		int stackSize = size - x;
+		int rStackSize = rSize - y;
+		Customer [] stack = new Customer[stackSize],
+				rStack = new Customer[rStackSize];
+		
+		/* The order of the operations
+		 * is really important here */
+		for (int i = 0; i < stackSize; i++) stack[i] = remove(x);
+		for (int i = 0; i < rStackSize; i++) rStack[i] = r.remove(y);
+		for (int i = 0; i < rStackSize; i++) {
+			addLast(rStack[i]);
+			rStack[i].insertInRoute(this);
+		}
+		for (int i = 0; i < stackSize; i++) {
+			r.addLast(stack[i]);
+			stack[i].insertInRoute(r);
+		}
+		
+		int stackGap = stackSize - rStackSize;
+		recalculateDistanceMap(p, size - stackGap - 1, dmatrix);
+		r.recalculateDistanceMap(q, rSize + stackGap - 1, dmatrix);
+		
+		return true;
 	}
 	
 	public void findShortestPath(DistanceMatrix dmatrix) {
