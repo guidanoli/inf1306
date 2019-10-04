@@ -7,7 +7,7 @@ all.txt
 iscost=true
 -M
 fscost=true
--seed
-0
+-M
+fspcost=true
 -A
 optcnt=true

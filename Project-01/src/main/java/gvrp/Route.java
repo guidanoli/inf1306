@@ -206,9 +206,10 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of customer in this route
 	 * @param q - position of destiny of the same customer (to the right)
 	 * @param dmatrix - distance matrix
+	 * @param onlyImprove - whether to apply move only if total cost is improved
 	 * @return success or not
 	 */
-	public boolean intraShift(int p, int q, DistanceMatrix dmatrix) {
+	public boolean intraShift(int p, int q, DistanceMatrix dmatrix, boolean onlyImprove) {
 		int size = size();
 		if (size < 2) return false;
 		
@@ -265,7 +266,7 @@ public class Route extends LinkedList<Customer> {
 		
 		int delta = dxy + dqp + dpw - dxp - dpy - dqw;
 		/* Does not accept solutions of same cost */
-		if (delta >= 0) return false;
+		if (delta >= 0 && onlyImprove) return false;
 		
 		/* Local search is then applied */
 		add(q, remove(p));
@@ -282,9 +283,10 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of customer in this route
 	 * @param q - position of another customer in the route r
 	 * @param dmatrix - distance matrix
+	 * @param onlyImprove - whether to apply move only if total cost is improved
 	 * @return success or not
 	 */
-	public boolean interShift(Route r, int p, int q, DistanceMatrix dmatrix) {
+	public boolean interShift(Route r, int p, int q, DistanceMatrix dmatrix, boolean onlyImprove) {
 		if (this == r) return false;
 		int size = size();
 		int rSize = r.size();
@@ -353,7 +355,7 @@ public class Route extends LinkedList<Customer> {
 		
 		int delta = dxy + dzp + dpq - dxp - dpy - dzq;
 		/* Does not accept solutions of same cost */
-		if (delta >= 0) return false;
+		if (delta >= 0 && onlyImprove) return false;
 		
 		/* Local search is then applied */
 		r.add(q, remove(p));
@@ -371,9 +373,10 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of customer from this route
 	 * @param q - position of the other customer in the route
 	 * @param dmatrix - distance matrix
+	 * @param onlyImprove - whether to apply move only if total cost is improved
 	 * @return success or not
 	 */
-	public boolean intraSwap(int p, int q, DistanceMatrix dmatrix) {
+	public boolean intraSwap(int p, int q, DistanceMatrix dmatrix, boolean onlyImprove) {
 		int size = size();
 		if (size < 3) return false;
 		/* with size < 2, it's impossible
@@ -437,7 +440,7 @@ public class Route extends LinkedList<Customer> {
 		
 		int delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw;
 		/* Does not accept solutions of same cost */
-		if (delta >= 0) return false;
+		if (delta >= 0 && onlyImprove) return false;
 		
 		/* Local search is then applied */
 		
@@ -459,9 +462,10 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of customer from this route
 	 * @param q - position of customer in the other route
 	 * @param dmatrix - distance matrix
+	 * @param onlyImprove - whether to apply move only if total cost is improved
 	 * @return success or not
 	 */
-	public boolean interSwap(Route r, int p, int q, DistanceMatrix dmatrix) {
+	public boolean interSwap(Route r, int p, int q, DistanceMatrix dmatrix, boolean onlyImprove) {
 		if (this == r) return false;
 		int size = size();
 		int rSize = r.size();
@@ -546,7 +550,7 @@ public class Route extends LinkedList<Customer> {
 		
 		int delta = dxq + dqy + dzp + dpw - dxp - dpy - dzq - dqw;
 		/* Does not accept solutions of same cost */
-		if (delta >= 0) return false;
+		if (delta >= 0 && onlyImprove) return false;
 		
 		/* Local search is then applied */
 		
@@ -573,9 +577,10 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of the first customer from this route
 	 * @param q - position of the second customer in the route
 	 * @param dmatrix - distance matrix
+	 * @param onlyImprove - whether to apply move only if total cost is improved
 	 * @return success or not
 	 */
-	public boolean intra2Opt(int p, int q, DistanceMatrix dmatrix) {
+	public boolean intra2Opt(int p, int q, DistanceMatrix dmatrix, boolean onlyImprove) {
 		int size = size();
 		if (size < 4) return false;
 		/* with size < 2, it's impossible
@@ -630,7 +635,7 @@ public class Route extends LinkedList<Customer> {
 		
 		int delta = dxq + dpy - dxp - dqy;
 		/* Does not accept solutions of same cost */
-		if (delta >= 0) return false;
+		if (delta >= 0 && onlyImprove) return false;
 		
 		/* Local search is then applied */
 		int stackSize = q-p+1;
@@ -649,9 +654,10 @@ public class Route extends LinkedList<Customer> {
 	 * @param p - position of customer from this route
 	 * @param q - position of customer in the other route
 	 * @param dmatrix - distance matrix
+	 * @param onlyImprove - whether to apply move only if total cost is improved
 	 * @return success or not
 	 */
-	public boolean inter2OptStar(Route r, int p, int q, DistanceMatrix dmatrix) {
+	public boolean inter2OptStar(Route r, int p, int q, DistanceMatrix dmatrix, boolean onlyImprove) {
 		if (this == r) return false;
 		int size = size();
 		int rSize = r.size();
@@ -733,7 +739,7 @@ public class Route extends LinkedList<Customer> {
 		
 		int delta = dxq + dyp - dxp - dyq;
 		/* Does not accept solutions of same cost */
-		if (delta >= 0) return false;
+		if (delta >= 0 && onlyImprove) return false;
 		
 		/* Local search is then applied 
 		 */

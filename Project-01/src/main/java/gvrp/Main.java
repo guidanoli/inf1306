@@ -21,6 +21,7 @@ import gvrp.analysis.BestKnownSolutions;
 import gvrp.analysis.AnalyticalValuesLabels;
 import gvrp.analysis.AnalyticalValuesList;
 import gvrp.construction.SolutionFactory;
+import gvrp.search.IteratedLocalSearch;
 import gvrp.search.LocalSearch;
 
 public class Main {
@@ -69,6 +70,9 @@ public class Main {
 	
 	@Parameter(names = {"-gamma"}, description = "Display gamma set")
 	boolean showgamma = false;
+	
+	@Parameter(names = {"-seconds"}, description = "Maximum time taken by each instance (in seconds)", validateWith = PositiveInteger.class)
+	int secondsPerInstance = 1;
 	
 	AnalyticalValuesList meanValuesList = new AnalyticalValuesList();
 	BestKnownSolutions bestKnownSolutions;
@@ -245,11 +249,11 @@ public class Main {
 		if (meanValues.containsKey("fspcost")) {
 			meanValuesList.addValueToList("fspcost", firstSPFraction);
 			if (isVerbose)
-				System.out.printf("Final cost: %d %s\n", firstSPCost, formatBKSComparison(firstSPFraction));
+				System.out.printf("Cost after first local search: %d %s\n", firstSPCost, formatBKSComparison(firstSPFraction));
 		}
 		
-		LocalSearch localSearch = new LocalSearch(currentSolution, seed);
-		int improvementCount = localSearch.findLocalMinimum();
+		LocalSearch localSearch = new LocalSearch(seed);
+		int improvementCount = localSearch.findLocalMinimum(currentSolution);
 		
 		if (improvementCount == 0) {
 			if (isVerbose)
@@ -264,6 +268,15 @@ public class Main {
 			if (isVerbose)
 				System.out.printf("Found local minima (%d improvements --- %.4f%% of improvement)\n", improvementCount, improvement*100);
 		}
+		
+		IteratedLocalSearch ils = new IteratedLocalSearch(seed);
+		
+		final long t0 = System.nanoTime();
+		ils.explore(initialSolution, (s) -> {
+			if (bestKnownSolutions.getBKSFraction(s) <= 0.05) return false;
+			long diff = System.nanoTime() - t0;
+			return diff < secondsPerInstance * 1000000000L; /* 1 second */
+		});
 		
 		int finalCost = currentSolution.getCost();
 		double finalFraction = bestKnownSolutions.getBKSFraction(currentSolution);
