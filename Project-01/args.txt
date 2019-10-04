@@ -1,5 +1,11 @@
 -idir
 data/GVRP3
 -ifile
-group.txt
--dmatrix
+all.txt
+-verbose
+-M
+iscost=true
+-M
+fscost=true
+-seed
+0

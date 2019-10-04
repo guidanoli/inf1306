@@ -7,6 +7,7 @@ import java.util.Random;
 import gvrp.Customer;
 import gvrp.DistanceMatrix;
 import gvrp.GammaSet;
+import gvrp.Instance;
 import gvrp.Route;
 import gvrp.Solution;
 
@@ -15,36 +16,38 @@ public class LocalSearch {
 	Solution solution;
 	Random random = new Random();
 	
+	/* Attempt to make a move with two customers and 
+	 * returns whether it was successful or not */
+	int numOfNeighbourhoodLevels = 1;
+	
 	public LocalSearch(Solution s0, long seed) {
 		this.solution = s0;
 		random.setSeed(seed);
 	}
 	
-	public Solution getBestSolution() {
-		return solution;
-	}
-
 	/**
 	 * Finds local minimal solution
 	 */
 	public int findLocalMinimum() {
 		int numOfImprovements = 0;
-		int numOfCustomers = solution.getInstance().getNumberOfCustomers();
-		DistanceMatrix dmatrix = solution.getInstance().getDistancematrix();
-		ArrayList<Customer> customers = solution.getInstance().getCustomers();
-		GammaSet gamma = solution.getInstance().getGammaSet();
+		Instance instance = solution.getInstance();
+		int numOfCustomers = instance.getNumberOfCustomers();
+		DistanceMatrix dmatrix = instance.getDistancematrix();
+		ArrayList<Customer> customers = instance.getCustomers();
+		GammaSet gamma = instance.getGammaSet();
 		
-		/* Preprocess some stuff */
+		/* Prepare some stuff beforehand */
 		ArrayList<Integer> iOrder = new ArrayList<>(numOfCustomers);
 		for (int i = 0; i < numOfCustomers; ++i) iOrder.add(i);
-		int jSize = Math.min(solution.getInstance().getGammaK(), solution.getInstance().getNumberOfSets()-1);
+		int jSize = Math.min(instance.getGammaK(), instance.getNumberOfSets()-1);
 		ArrayList<Integer> jOrder = new ArrayList<>(jSize);
 		for (int i = 0; i < jSize; ++i) jOrder.add(i);
 		ArrayList<Customer> gammaSubset = null;
 		boolean improvedOnce = false;
+		int neighboorhoodLevel = 0;
 		
 		/* Start main loop */
-		while (true) {
+		while (neighboorhoodLevel < numOfNeighbourhoodLevels) {
 			
 			/* Shuffle i orders so not to leave a bias */
 			Collections.shuffle(iOrder, random);
@@ -70,12 +73,28 @@ public class LocalSearch {
 						/* C[i] and C[j] are in the same route
 						 * --> Intra route neighbourhood
 						 */
-						improved = ri.shiftSmart(ciIndex, cjIndex, dmatrix);
+						switch (neighboorhoodLevel) {
+							case 0:
+								improved = ri.shiftSmart(ciIndex, cjIndex, dmatrix);
+								break;
+							default:
+								/* In case there are less neighbourhoods */
+								improved = ri.shiftSmart(ciIndex, cjIndex, dmatrix);
+								break;
+						}
 					} else {
 						/* C[i] and C[j] are in different routes
 						 * --> Inter route neighbourhood
 						 */
-						improved = ri.shiftInterSmart(rj, ciIndex, cjIndex, dmatrix);
+						switch (neighboorhoodLevel) {
+							case 0:
+								improved = ri.shiftInterSmart(rj, ciIndex, cjIndex, dmatrix);
+								break;
+							default:
+								/* In case there are less neighbourhoods */
+								improved = ri.shiftInterSmart(rj, ciIndex, cjIndex, dmatrix);
+								break;
+						}
 						if (improved) {
 							/* Route j has changed!
 							 */
@@ -83,6 +102,7 @@ public class LocalSearch {
 						}
 					}
 					if (improved) {
+						neighboorhoodLevel = 0; /* Goes back to ground level */
 						improvedOnce = true; /* Guarantee there was one improvement */
 						/* Route i has changed!
 						 */
@@ -93,9 +113,9 @@ public class LocalSearch {
 				}
 			}
 			if (!improvedOnce) {
-				/* Found no improvement
-				 * --> Local minimal */
-				break;
+				/* Found no improvement in the 
+				 * current neighbourhood space */
+				++neighboorhoodLevel;
 			}
 		}
 		return numOfImprovements;
