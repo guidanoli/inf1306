@@ -138,10 +138,10 @@ public class LocalSearch {
 		for (int i = 0; i < jSize; ++i) jOrder.add(i);
 		ArrayList<Customer> gammaSubset = null;
 		boolean perturbedOnce = false;
-		int neighboorhoodLevel = 0;
+		int neighboorhoodLevel = numOfNeighbourhoodLevels - 1;
 		
 		/* Start main loop */
-		while (neighboorhoodLevel < numOfNeighbourhoodLevels && numOfPertubations > 0) {
+		while (numOfPertubations > 0) {
 			
 			/* Shuffle i orders so not to leave a bias */
 			Collections.shuffle(iOrder, random);
@@ -195,7 +195,7 @@ public class LocalSearch {
 						}
 					}
 					if (applied) {
-						neighboorhoodLevel = 0; /* Goes back to ground level */
+						neighboorhoodLevel = (neighboorhoodLevel + 1) % numOfNeighbourhoodLevels;
 						perturbedOnce = true; /* Guarantee there was one improvement */
 						if (!solution.isCustomerInRoute(ci)) break;
 						--numOfPertubations;
@@ -204,9 +204,8 @@ public class LocalSearch {
 				}
 			}
 			if (!perturbedOnce) {
-				/* Found no perturbation in the 
-				 * current neighbourhood space */
-				++neighboorhoodLevel;
+				/* Found no perturbation in the current neighbourhood space */
+				neighboorhoodLevel = (neighboorhoodLevel + 1) % numOfNeighbourhoodLevels;
 			}
 		}
 	}
