@@ -11,7 +11,7 @@ public class IteratedLocalSearch {
 		this.seed = seed;
 	}
 	
-	public Solution explore(Solution bestSolution, Predicate<Solution> stoppingCriterion) {
+	public Solution explore(Solution solution, double pertubation, Predicate<Solution> stoppingCriterion) {
 		
 		/* S0 ← InitialSolution;
 		 * S ← LocalSearch(S0);
@@ -28,27 +28,22 @@ public class IteratedLocalSearch {
 		 */
 		
 		LocalSearch ls = new LocalSearch(seed);
-		ls.findLocalMinimum(bestSolution); /* Local Search */
-		Solution currentSolution = new Solution(bestSolution);
-		int solutionSize = bestSolution.getInstance().getNumberOfCustomers();
+		int n = solution.getInstance().getNumberOfCustomers();
+		int perturbationSize = Math.max((int) (n * pertubation), 1);
 		
-		double t = 0.0;
-		int improvements = 0;
-		
-		while (true) {
-			ls.perturbSolution(currentSolution, (int)(solutionSize*Math.exp(-t))); /* Perturbation */
-			improvements = ls.findLocalMinimum(currentSolution); /* Local Search */
-			if (!stoppingCriterion.test(currentSolution)) break; /* Stopping Criterion */
-			if (improvements > 0) {
-				if (currentSolution.getCost() <= bestSolution.getCost()) {
-					/* If an improvement is found, override best solution */
-					bestSolution = currentSolution;
-				} else {
-					/* If no improvement is found, tries again with best solution */
-					currentSolution = new Solution(bestSolution);
-				}
+		ls.findLocalMinimum(solution); /* First Local Search */
+		Solution bestSolution = new Solution(solution); /* Best solution */
+		int bestCost = bestSolution.getCost();
+		int currCost = bestCost;
+				
+		while (stoppingCriterion.test(solution)) { /* Stopping Criterion */
+			ls.perturbSolution(solution, perturbationSize); /* Perturbation */
+			ls.findLocalMinimum(solution); /* Local Search */
+			currCost = solution.getCost();
+			if (bestCost > currCost) {
+				bestSolution = new Solution(solution); /* save best solution */
+				bestCost = currCost;
 			}
-			++t;
 		}
 		
 		return bestSolution;

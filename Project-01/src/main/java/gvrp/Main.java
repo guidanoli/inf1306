@@ -3,11 +3,13 @@ package gvrp;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -17,12 +19,10 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.validators.PositiveInteger;
 
-import gvrp.analysis.BestKnownSolutions;
-import gvrp.analysis.AnalyticalValuesLabels;
-import gvrp.analysis.AnalyticalValuesList;
-import gvrp.construction.SolutionFactory;
-import gvrp.search.IteratedLocalSearch;
-import gvrp.search.LocalSearch;
+import gvrp.analysis.*;
+import gvrp.construction.*;
+import gvrp.jcommander.*;
+import gvrp.search.*;
 
 public class Main {
 	
@@ -71,8 +71,20 @@ public class Main {
 	@Parameter(names = {"-gamma"}, description = "Display gamma set")
 	boolean showgamma = false;
 	
-	@Parameter(names = {"-seconds"}, description = "Maximum time taken by each instance (in seconds)", validateWith = PositiveInteger.class)
-	int secondsPerInstance = 1;
+	@Parameter(names = {"-seconds"}, description = "Maximum time taken by each instance (in seconds)", validateWith = PositiveDouble.class)
+	double secondsPerInstance = 1.0;
+	
+	@Parameter(names = {"-perturbation"}, description = "Perturbation magnitude", validateWith = ZeroToOneDouble.class)
+	double IlsPertubationFraction = 0.25;
+	
+	@Parameter(names = {"-threshold"}, description = "Solution quality threshold (compared to BKS)", validateWith = ZeroToOneDouble.class)
+	double qualityThreshold = 0.05;
+	
+	@Parameter(names = {"-noise"}, description = "Save all data points (not just improving ones - may be noisy)")
+	boolean saveNoise = false;
+	
+	@Parameter(names = {"-live"}, description = "Print data points live (might interfeer simulation)")
+	boolean livePrinting = false;
 	
 	AnalyticalValuesList meanValuesList = new AnalyticalValuesList();
 	BestKnownSolutions bestKnownSolutions;
@@ -194,6 +206,8 @@ public class Main {
 			e.printStackTrace();
 			return false;
 		}
+		
+		sc.close();
 
 		if (instanceInfo)
 			System.out.println(instance);
@@ -223,11 +237,13 @@ public class Main {
 
 		
 		int initialCost = initialSolution.getCost();
-		double initialFraction = bestKnownSolutions.getBKSFraction(initialSolution);
+		double initialFraction = bestKnownSolutions.getBKSFraction(instance, initialCost);
 		if (meanValues.containsKey("iscost")) {
 			meanValuesList.addValueToList("iscost", initialFraction);
 			if (isVerbose)
 				System.out.printf("Initial cost: %d %s\n", initialCost, formatBKSComparison(initialFraction));
+			if (meanValues.containsKey("optcnt") && initialFraction == 0.0)
+				meanValuesList.addValueToList("optcnt", 1.0);
 		}
 		
 		
@@ -245,54 +261,69 @@ public class Main {
 			r.findShortestPath(currentSolution.getInstance().getDistancematrix());
 		
 		int firstSPCost = currentSolution.getCost();
-		double firstSPFraction = bestKnownSolutions.getBKSFraction(currentSolution);
+		double firstSPFraction = bestKnownSolutions.getBKSFraction(instance, firstSPCost);
 		if (meanValues.containsKey("fspcost")) {
 			meanValuesList.addValueToList("fspcost", firstSPFraction);
 			if (isVerbose)
 				System.out.printf("Cost after first local search: %d %s\n", firstSPCost, formatBKSComparison(firstSPFraction));
-		}
-		
-		LocalSearch localSearch = new LocalSearch(seed);
-		int improvementCount = localSearch.findLocalMinimum(currentSolution);
-		
-		if (improvementCount == 0) {
-			if (isVerbose)
-				System.out.println("Could not find local minima.");
-			if (meanValues.containsKey("improvement"))
-				meanValuesList.addValueToList("improvement", 0.0d);
-		} else {
-			double fraction = bestKnownSolutions.getBKSFraction(currentSolution);
-			double improvement = initialFraction - fraction;
-			if (meanValues.containsKey("improvement"))
-				meanValuesList.addValueToList("improvement", improvement);
-			if (isVerbose)
-				System.out.printf("Found local minima (%d improvements --- %.4f%% of improvement)\n", improvementCount, improvement*100);
+			if (meanValues.containsKey("optcnt") && firstSPFraction == 0.0)
+				meanValuesList.addValueToList("optcnt", 1.0);
 		}
 		
 		IteratedLocalSearch ils = new IteratedLocalSearch(seed);
 		
 		final long t0 = System.nanoTime();
-		ils.explore(initialSolution, (s) -> {
-			if (bestKnownSolutions.getBKSFraction(s) <= 0.05) return false;
-			long diff = System.nanoTime() - t0;
-			return diff < secondsPerInstance * 1000000000L; /* 1 second */
-		});
+		ArrayList<Double> timesteps = new ArrayList<>();
+		ArrayList<Double> fractions = new ArrayList<>();
+		
+		/* Fist data point */
+		timesteps.add(0.0);
+		fractions.add(initialFraction);
+		
+		if (livePrinting) {
+			System.out.printf("0.000000 ms\t%g%%\n", 100*initialFraction);
+		}
+		
+		/* should this point be registered, being d = last data point - current data point */
+		Predicate<Double> registerDataPoint = saveNoise ? (d) -> d != 0 : (d) -> d > 0;
+		
+		/* should the I.L.S. continue, being s the current solution */
+		Predicate<Solution> stoppingCriterion = (s) -> {
+			double deltaT = System.nanoTime() - t0;
+			double bksFraction = bestKnownSolutions.getBKSFraction(s);
+			boolean continueILS = (deltaT < secondsPerInstance*1E9) &&
+					(bksFraction > qualityThreshold);
+			double bksDifference = fractions.get(fractions.size()-1) - bksFraction;
+			if (registerDataPoint.test(bksDifference)) {
+				if (livePrinting)
+					System.out.printf("%.6f ms\t%g%%\n", deltaT/1E6, bksFraction*100);
+				timesteps.add(deltaT);
+				fractions.add(bksFraction);
+			}
+			return continueILS; /* whether to continue or not */
+		};
+		
+		currentSolution = ils.explore(initialSolution, IlsPertubationFraction, stoppingCriterion);
 		
 		int finalCost = currentSolution.getCost();
-		double finalFraction = bestKnownSolutions.getBKSFraction(currentSolution);
+		double finalFraction = bestKnownSolutions.getBKSFraction(instance, finalCost);
 		if (meanValues.containsKey("fscost")) {
 			meanValuesList.addValueToList("fscost", finalFraction);
 			if (isVerbose)
 				System.out.printf("Final cost: %d %s\n", finalCost, formatBKSComparison(finalFraction));
+			if (meanValues.containsKey("optcnt") && finalFraction == 0.0)
+				meanValuesList.addValueToList("optcnt", 1.0);
 		}
+		
+		if (!livePrinting)
+			for (int i = 0; i < timesteps.size(); i++)
+				System.out.printf("%.6f ms\t%g%%\n", timesteps.get(i)/1E6, 100*fractions.get(i));
 		
 		return true;
 	}
 
 	public String formatBKSComparison(double fraction) {
 		if (fraction == 0) {
-			if (meanValues.containsKey("optcnt"))
-				meanValuesList.addValueToList("optcnt", 1.0);
 			return "(Optimal solution)";
 		}
 		return String.format("(%.2f%% from optimal solution)", fraction*100);

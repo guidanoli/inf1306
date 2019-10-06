@@ -17,8 +17,9 @@ public class Instance {
 	public static class Builder {
 		
 		String instanceName = null;
-		ArrayList<CustomerSet.Builder> customerSetsBuilders = new ArrayList<CustomerSet.Builder>();
-		ArrayList<Customer> customers = new ArrayList<Customer>();
+		ArrayList<CustomerSet.Builder> customerSetBuilders = new ArrayList<>();
+		ArrayList<Customer.Builder> customerBuilders = new ArrayList<>();
+		HashMap<Customer.Builder, CustomerSet.Builder> builderMap = new HashMap<>();
 		int fleetSize = 0;
 		int vehicleCapacity = 0;
 		int k = 20;
@@ -66,7 +67,9 @@ public class Instance {
 		 */
 		public Builder dimension(int d) {
 			for (int i = 0; i < d; i++) {
-				this.customers.add(new Customer(i));
+				Customer.Builder builder = new Customer.Builder();
+				builder.id(i); /* Set the id already */
+				this.customerBuilders.add(builder);
 			}
 			return this;
 		}
@@ -79,8 +82,8 @@ public class Instance {
 		 * @return builder
 		 */
 		public Builder customerPosition(int customerId, int x, int y) {
-			Customer targetCustomer = customers.get(customerId - 1);
-			targetCustomer.setPosition(new Point(x, y));
+			Customer.Builder targetBuilder = customerBuilders.get(customerId - 1);
+			targetBuilder.pos(new Point(x, y));
 			return this;
 		}
 		
@@ -91,7 +94,7 @@ public class Instance {
 		 * @return builder
 		 */
 		public Builder customerSetDemand(int setId, int demand) {
-			CustomerSet.Builder targetSetBuilder = customerSetsBuilders.get(setId - 1);
+			CustomerSet.Builder targetSetBuilder = customerSetBuilders.get(setId - 1);
 			targetSetBuilder.demand(demand);
 			return this;
 		}
@@ -103,7 +106,7 @@ public class Instance {
 		 */
 		public Builder customerSetCount(int count) {
 			for (int i = 1; i <= count; i++) {
-				this.customerSetsBuilders.add(new CustomerSet.Builder().id(i));
+				this.customerSetBuilders.add(new CustomerSet.Builder().id(i));
 			}
 			return this;
 		}
@@ -115,18 +118,27 @@ public class Instance {
 		 * @return builder
 		 */
 		public Builder customerSet(int customerId, int setId) {
-			Customer targetCustomer = customers.get(customerId - 1);
-			CustomerSet.Builder targetSetBuilder = customerSetsBuilders.get(setId - 1);
-			targetSetBuilder.addCustomer(targetCustomer);
+			Customer.Builder targetBuilder = customerBuilders.get(customerId - 1);
+			CustomerSet.Builder targetSetBuilder = customerSetBuilders.get(setId - 1);
+			builderMap.put(targetBuilder, targetSetBuilder);
 			return this;
 		}
 		
+		/**
+		 * Set parameter K for gamma set
+		 * @param k - gamma set size
+		 * @return builder
+		 */
 		public Builder setK(int k) {
 			if (k > 0)
 				this.k = k;
 			return this;
 		}
-		
+		/**
+		 * Display the gamma set or not
+		 * @param show - to show (true) or not (false)
+		 * @return builder
+		 */
 		public Builder showGamma(boolean show) {
 			this.showGamma = show;
 			return this;
@@ -138,18 +150,32 @@ public class Instance {
 		 */
 		public Instance build() {
 			Point depot = null;
-			for (Customer customer : customers) {
-				if (customer.set == null) {
-					depot = customer.pos;
-					break;
-				}
-			}
-			ArrayList<CustomerSet> customerSets = new ArrayList<CustomerSet>(customerSetsBuilders.size());
-			for (CustomerSet.Builder builder : customerSetsBuilders) {
+			
+			ArrayList<CustomerSet> customerSets = new ArrayList<CustomerSet>(customerSetBuilders.size());
+			for (CustomerSet.Builder builder : customerSetBuilders) {
 				CustomerSet set = builder.build();
 				customerSets.add(set);
 			}
-			return new Instance(instanceName, depot, customers, customerSets, fleetSize, vehicleCapacity, k, showGamma);
+			
+			ArrayList<Customer> customers = new ArrayList<Customer>(customerBuilders.size());
+			for (Customer.Builder builder : customerBuilders) {
+				CustomerSet.Builder setBuilder = builderMap.get(builder);
+				Customer customer;
+				if (setBuilder == null) {
+					depot = builder.pos; /* Found depot */
+					customer = builder.build();
+				} else {
+					CustomerSet set = customerSets.get(setBuilder.setId-1);
+					builder.set(set); /* Associate customer to set */
+					customer = builder.build();
+					set.add(customer);
+				}
+				
+				customers.add(customer);
+			}
+			
+			return new Instance(instanceName, depot, customers, customerSets,
+					fleetSize, vehicleCapacity, k, showGamma);
 		}
 		
 	}
@@ -262,14 +288,14 @@ public class Instance {
 		this.fleet = vCount;
 		this.capacity = vCap;
 		this.customers = customers;
-		this.dmatrix = new DistanceMatrix(customers, depot); /* Must be before the gamma set initialization */
+		this.dmatrix = new DistanceMatrix(customers, depot); /* Must be before the gamma set initialisation */
 		this.k = k;
 		
-		/* Constance variables */
+		/* Constant variables */
 		numOfSets = sets.size();
 		numOfCustomers = customers.size();
 		
-		/* Gamma set initialization */
+		/* Gamma set initialisation */
 		this.gamma = new GammaSet(this, k, showGamma);
 	}
 	
@@ -366,6 +392,16 @@ public class Instance {
 			sj.add("null");
 		}
 		return sj.toString();
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof Instance) {
+			Instance inst = (Instance) obj;
+			String name = getName(), instName = inst.getName();
+			return name == null ? instName== null : name.equals(instName);
+		}
+		return false;
 	}
 	
 }

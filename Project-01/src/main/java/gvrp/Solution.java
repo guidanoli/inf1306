@@ -1,13 +1,15 @@
 package gvrp;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringJoiner;
 
 @SuppressWarnings("serial")
 public class Solution extends ArrayList<Route> {
 
-	private Instance instance;
+	Instance instance;
+	HashMap<Customer, Route> map;
 	
 	/**
 	 * @return the instance
@@ -18,14 +20,21 @@ public class Solution extends ArrayList<Route> {
 
 	public Solution(Instance instance) {
 		this.instance = instance;
+		this.map = new HashMap<Customer, Route>(instance.getNumberOfCustomers());
+		DistanceMatrix dmatrix = instance.getDistancematrix();
+		int maxCap = instance.getCapacity();
 		for (int i = 1; i <= instance.getFleet(); i++) {
-			add(new Route(i, instance.getDepot(), instance.getCapacity()));
+			add(new Route(i, maxCap, dmatrix, map));
 		}
 	}
 	
 	public Solution(Solution anotherSolution) {
-		super(anotherSolution);
 		this.instance = anotherSolution.instance;
+		this.map = new HashMap<Customer, Route>(instance.getNumberOfCustomers());
+		this.map.putAll(anotherSolution.map);
+		for (Route route : anotherSolution) {
+			add(new Route(route, map));
+		}
 	}
 	
 	public boolean isValid(boolean printError) {
@@ -60,7 +69,7 @@ public class Solution extends ArrayList<Route> {
 		for (CustomerSet set : instance.getSets()) {
 			int numOfCustomersInRoute = 0;
 			for (Customer setCustomer : set) {
-				if (setCustomer.isInRoute())
+				if (isCustomerInRoute(setCustomer))
 					numOfCustomersInRoute++;
 			}
 			if (numOfCustomersInRoute == 0) {
@@ -81,12 +90,32 @@ public class Solution extends ArrayList<Route> {
 		return true;
 	}
 	
+	public Route getCustomerRoute(Customer customer) {
+		return map.get(customer);
+	}
+	
+	public boolean isCustomerInRoute(Customer customer) {
+		return map.get(customer) != null;
+	}
+	
 	public int getCost() {
 		int totalCost = 0;
 		for (Route route : this) {
 			totalCost += route.getCost();
 		}
 		return totalCost;
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Solution) {
+			Solution sol = (Solution) o;
+			if (!getInstance().equals(sol.getInstance())) return false;
+			HashSet<Route> routeSet = new HashSet<>(this);
+			HashSet<Route> otherRouteSet = new HashSet<>(sol);
+			return routeSet.equals(otherRouteSet);
+		}
+		return false;
 	}
 	
 	@Override

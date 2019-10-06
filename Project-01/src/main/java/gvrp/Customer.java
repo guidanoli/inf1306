@@ -2,12 +2,45 @@ package gvrp;
 
 public class Customer {
 
+	public static class Builder {
+		
+		CustomerSet set;
+		Point pos;
+		Integer id;
+		
+		/**
+		 * Constructs the builder
+		 */
+		public Builder() {}
+		
+		public Builder set(CustomerSet set) {
+			this.set = set;
+			return this;
+		}
+		
+		public Builder pos(Point pos) {
+			this.pos = pos;
+			return this;
+		}
+		
+		public Builder id(int id) {
+			this.id = id;
+			return this;
+		}
+		
+		public Customer build() {
+			return new Customer(set, pos, id);
+		}
+		
+	}
+	
 	CustomerSet set;
-	Route route;
 	Point pos;
 	int id;
 	
-	public Customer(int id) {
+	public Customer(CustomerSet set, Point pos, int id) {
+		this.set = set;
+		this.pos = pos;
 		this.id = id;
 	}
 	
@@ -26,15 +59,7 @@ public class Customer {
 	public int getDemand() {
 		return set.getDemand();
 	}
-	
-	public void setSet(CustomerSet set) {
-		this.set = set;
-	}
-	
-	public void setPosition(Point pos) {
-		this.pos = pos;
-	}
-	
+		
 	public int distanceFrom(Customer customer) {
 		return this.pos.distanceTo(customer.pos);
 	}
@@ -42,23 +67,7 @@ public class Customer {
 	public int distanceFrom(Point point) {
 		return this.pos.distanceTo(point);
 	}
-	
-	public void insertInRoute(Route route) {
-		this.route = route;
-	}
-	
-	public void removeFromRoute() {
-		route = null;
-	}
-	
-	public Route getRoute() {
-		return route;
-	}
-	
-	public boolean isInRoute() {
-		return route != null;
-	}
-	
+		
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof Customer) {

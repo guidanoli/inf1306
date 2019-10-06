@@ -9,26 +9,31 @@ import java.util.StringJoiner;
 @SuppressWarnings("serial")
 public class Route extends LinkedList<Customer> {
 
-	Point depot;
+	DistanceMatrix dmatrix;
 	int id;
 	int maxCap;
+	HashMap<Customer, Route> map;
 	
 	/* Distance buffer
 	 * key = null -> distance from depot to depot */
 	HashMap<Customer, Integer> dLeft = new HashMap<>();
 	HashMap<Customer, Integer> dRight = new HashMap<>();
 	
-	public Route(int id, Point depot, int maximumCapacity) {
+	public Route(int id, int maximumCapacity, DistanceMatrix dmatrix, HashMap<Customer, Route> map) {
 		this.id = id;
-		this.depot = depot;
 		this.maxCap = maximumCapacity;
+		this.dmatrix = dmatrix;
+		this.map = map;
 	}
 	
-	public Route(Route anotherRoute) {
+	public Route(Route anotherRoute, HashMap<Customer, Route> map) {
 		super(anotherRoute); /* Copies customers */
-		this.depot = anotherRoute.depot;
+		dLeft.putAll(anotherRoute.dLeft);
+		dRight.putAll(anotherRoute.dRight);
 		this.id = anotherRoute.id;
 		this.maxCap = anotherRoute.maxCap;
+		this.dmatrix = anotherRoute.dmatrix;
+		this.map = map;
 	}
 	
 	public int getId() {
@@ -55,20 +60,19 @@ public class Route extends LinkedList<Customer> {
 		
 		int totalCost = 0;
 		Customer first = getFirst();
-		totalCost += first.distanceFrom(depot);
+		totalCost += dmatrix.getDistanceFromDepot(first);
 		if (size() == 1) return 2*totalCost; /* One customer */
 		
 		Iterator<Customer> li = listIterator();
 		Customer prev = first;
 		while (li.hasNext()) {
 			Customer curr = li.next();
-			totalCost += prev.distanceFrom(curr);
+			totalCost += dmatrix.getDistanceBetween(prev, curr);
 			prev = curr;
 		}
-		totalCost += prev.distanceFrom(depot);
+		totalCost += dmatrix.getDistanceFromDepot(prev);
 		return totalCost;
 	}
-	
 	
 	@Override
 	public String toString() {
@@ -83,11 +87,15 @@ public class Route extends LinkedList<Customer> {
 		int index = indexOf(c);
 		boolean removed = remove(c);
 		if (!removed) return false;
-		if (isEmpty()) return true;
+		if (isEmpty()) {
+			/* Updates customer route */
+			map.put(c, null);
+			return true;
+		}
 		int lb = Math.max(0, index-1);
 		int ub = Math.min(size()-1, index+1);
 		recalculateDistanceMap(lb, ub, dmatrix);
-		c.removeFromRoute(); /* Updates customer route */
+		map.put(c, null); /* Updates customer route */
 		return true;
 	}
 	
@@ -98,7 +106,7 @@ public class Route extends LinkedList<Customer> {
 		addLast(c);
 		int size = size();
 		recalculateDistanceMap(size-1, size-1, dmatrix);
-		c.insertInRoute(this); /* Updates customer route */
+		map.put(c, this); /* Updates customer route */
 		return true;
 	}
 
@@ -360,7 +368,7 @@ public class Route extends LinkedList<Customer> {
 		/* Local search is then applied */
 		r.add(q, remove(p));
 		
-		cp.insertInRoute(r); /* Updates customer route */
+		map.put(cp, r); /* Updates customer route */
 		
 		recalculateDistanceMap(cx == null ? p : x, cy == null ? p-1 : y-1, dmatrix); /* y decreased by one because p is removed from this route */
 		r.recalculateDistanceMap(cz == null ? q : z, q+1, dmatrix); /* q increased by one because p is inserted in the route r*/
@@ -562,8 +570,8 @@ public class Route extends LinkedList<Customer> {
 		r.add(q, cp);
 		
 		/* Updates customers' route */
-		cp.insertInRoute(r);
-		cq.insertInRoute(this);
+		map.put(cp, r);
+		map.put(cq, this);
 		
 		recalculateDistanceMap(cx == null ? p : x, cy == null ? p : y, dmatrix);
 		r.recalculateDistanceMap(cz == null ? q : z, cw == null ? q : w, dmatrix);
@@ -758,11 +766,11 @@ public class Route extends LinkedList<Customer> {
 		for (int i = 0; i < rStackSize; i++) rStack[i] = r.remove(q);
 		for (int i = 0; i < rStackSize; i++) {
 			addLast(rStack[i]);
-			rStack[i].insertInRoute(this);
+			map.put(rStack[i], this);
 		}
 		for (int i = 0; i < stackSize; i++) {
 			r.addLast(stack[i]);
-			stack[i].insertInRoute(r);
+			map.put(stack[i], r);
 		}
 		
 		recalculateDistanceMap(x, p + rStackSize - 1, dmatrix);
@@ -775,7 +783,7 @@ public class Route extends LinkedList<Customer> {
 		if (isEmpty()) return; /* Do nothing for empty routes */
 		
 		ArrayList<Customer> newRoute = new ArrayList<>(size());
-		recalculateDistanceMap(0, 0, dmatrix);
+		recalculateDistanceMap(0, 0, dmatrix); /* Update closest from depot from the left */
 		
 		/*
 		 * Bellman-Ford algorithm
@@ -804,11 +812,12 @@ public class Route extends LinkedList<Customer> {
 			previous = closestCustomer;
 			newRoute.add(previous);
 		}
+
+		/* Updates customer route and route itself */
 		replaceAll((c) -> {
-			/* Updates customer route and route itself */
-			c.removeFromRoute();
+			map.put(c, null); /* Customer c may not be in a route anymore */
 			Customer newCustomer = newRoute.get(indexOf(c));
-			newCustomer.insertInRoute(this);
+			map.put(newCustomer, this); /* New customer is in this route now */
 			return newCustomer;
 		});
 	}

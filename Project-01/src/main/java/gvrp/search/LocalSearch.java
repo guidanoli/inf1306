@@ -54,16 +54,16 @@ public class LocalSearch {
 			improvedOnce = false;
 			for (Integer i : iOrder) {
 				Customer ci = customers.get(i);
-				if (!ci.isInRoute()) continue;
+				if (!solution.isCustomerInRoute(ci)) continue;
 				/* Through all customers that are in route */
 				gammaSubset = gamma.getClosestNeighbours(ci);
 				/* Obtain the k nearest customers */
 				for (Integer j : jOrder) {
 					Customer cj = gammaSubset.get(j);
-					if (!cj.isInRoute()) continue;
+					if (!solution.isCustomerInRoute(cj)) continue;
 					/* For each neighbouring customer that is also in a route */
 					boolean improved = false;
-					Route ri = ci.getRoute(), rj = cj.getRoute();
+					Route ri = solution.getCustomerRoute(ci), rj = solution.getCustomerRoute(cj);
 					Integer ciIndex = ri.indexOf(ci), cjIndex = rj.indexOf(cj);
 					/* Check whether they are in the same route or
 					 * not and explore the neighbourhood accordingly */
@@ -109,7 +109,7 @@ public class LocalSearch {
 						/* Route i has changed!
 						 */
 						ri.findShortestPath(dmatrix);
-						if (!ci.isInRoute()) break;
+						if (!solution.isCustomerInRoute(ci)) break;
 						++numOfImprovements;
 					}					
 				}
@@ -150,16 +150,16 @@ public class LocalSearch {
 			perturbedOnce = false;
 			for (Integer i : iOrder) {
 				Customer ci = customers.get(i);
-				if (!ci.isInRoute()) continue;
+				if (!solution.isCustomerInRoute(ci)) continue;
 				/* Through all customers that are in route */
 				gammaSubset = gamma.getClosestNeighbours(ci);
 				/* Obtain the k nearest customers */
 				for (Integer j : jOrder) {
 					Customer cj = gammaSubset.get(j);
-					if (!cj.isInRoute()) continue;
+					if (!solution.isCustomerInRoute(cj)) continue;
 					/* For each neighbouring customer that is also in a route */
 					boolean applied = false;
-					Route ri = ci.getRoute(), rj = cj.getRoute();
+					Route ri = solution.getCustomerRoute(ci), rj = solution.getCustomerRoute(cj);
 					Integer ciIndex = ri.indexOf(ci), cjIndex = rj.indexOf(cj);
 					/* Check whether they are in the same route or
 					 * not and explore the neighbourhood accordingly */
@@ -197,7 +197,7 @@ public class LocalSearch {
 					if (applied) {
 						neighboorhoodLevel = 0; /* Goes back to ground level */
 						perturbedOnce = true; /* Guarantee there was one improvement */
-						if (!ci.isInRoute()) break;
+						if (!solution.isCustomerInRoute(ci)) break;
 						--numOfPertubations;
 						break;
 					}					

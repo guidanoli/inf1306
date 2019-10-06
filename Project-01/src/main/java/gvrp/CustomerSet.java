@@ -50,15 +50,6 @@ public class CustomerSet extends HashSet<Customer> {
 	}
 	
 	@Override
-	public boolean add(Customer e) {
-		boolean added = super.add(e);
-		if (added) {
-			e.setSet(this);
-		}
-		return added;
-	}
-	
-	@Override
 	public boolean equals(Object o) {
 		if (o instanceof CustomerSet) {
 			CustomerSet set = (CustomerSet) o;

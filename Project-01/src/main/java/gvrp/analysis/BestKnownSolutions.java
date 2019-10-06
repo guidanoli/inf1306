@@ -3,6 +3,7 @@ package gvrp.analysis;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import gvrp.Instance;
 import gvrp.Solution;
 
 /**
@@ -38,10 +39,25 @@ public class BestKnownSolutions {
 		return map.get(instanceName);
 	}
 	
+	/**
+	 * Obtain percentage of solution cost in relation to best known one
+	 * @param solution - solution being analysed
+	 * @return discrepancy of solution in relation to best known solution
+	 */
 	public Double getBKSFraction(Solution solution) {
-		String instanceName = solution.getInstance().getName();
-		double solutionCost = solution.getCost(); 
-		return Math.abs(solutionCost-getBKS(instanceName)) / getBKS(instanceName);
+		return getBKSFraction(solution.getInstance(), solution.getCost());
+	}
+	
+	/**
+	 * Obtain percentage of the cost in relation to best known cost
+	 * @param instance - instance being analysed
+	 * @param solutionCost - sum of all route costs (Euclidian distance)
+	 * @return discrepancy in relation to best known solution
+	 */
+	public Double getBKSFraction(Instance instance, int solutionCost) {
+		String instanceName = instance.getName();
+		Double bks = getBKS(instanceName);
+		return Math.abs(solutionCost-bks)/bks;
 	}
 	
 }
