@@ -2,6 +2,7 @@ package gvrp;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -72,13 +73,13 @@ public class Main {
 	boolean showgamma = false;
 	
 	@Parameter(names = {"-seconds"}, description = "Maximum time taken by each instance (in seconds)", validateWith = PositiveDouble.class)
-	double secondsPerInstance = 1.0;
+	double secondsPerInstance = 10.0;
 	
 	@Parameter(names = {"-perturbation"}, description = "Perturbation magnitude", validateWith = ZeroToOneDouble.class)
 	double IlsPertubationFraction = 0.25;
 	
 	@Parameter(names = {"-threshold"}, description = "Solution quality threshold (compared to BKS)", validateWith = ZeroToOneDouble.class)
-	double qualityThreshold = 0.05;
+	double qualityThreshold = 0.0;
 	
 	@Parameter(names = {"-noise"}, description = "Save all data points (not just improving ones - may be noisy)")
 	boolean saveNoise = false;
@@ -86,9 +87,24 @@ public class Main {
 	@Parameter(names = {"-live"}, description = "Print data points live (might interfeer simulation)")
 	boolean livePrinting = false;
 	
+	@Parameter(names = {"-csvdir"}, description = "Path to where .csv files are saved")
+	File CSVdirectory = new File("data/results");
+	
+	@Parameter(names = {"-csv"}, description =  "Save results in a .csv file in the -csvdir directory")
+	boolean saveCSV = false;
+	
 	AnalyticalValuesList meanValuesList = new AnalyticalValuesList();
 	BestKnownSolutions bestKnownSolutions;
-		
+	UtilsCSV csv;
+	
+	String [] csvColumns = {
+		"Instance name",
+		"Instance size",
+		"Initial solution %",
+		"Final solution %",
+		"Last iteration timestep (ms)"
+	};
+	
 	/**
 	 * Runs the GVRP solver according to parameters parsed in command line
 	 * 
@@ -108,6 +124,8 @@ public class Main {
 		main.run();
 		if (!main.meanValuesList.isEmpty()) {
 			System.out.println("Analytics:");
+			if (main.saveCSV)
+				main.csv.writeLine();
 			TreeSet<AnalyticalValuesLabels> sortedMeanValues = new TreeSet<>((sym1,sym2) -> {
 				return sym1.getPosition()-sym2.getPosition();
 			});
@@ -118,7 +136,19 @@ public class Main {
 					analyticalValue = main.meanValuesList.getMean(symbol.name());
 				else
 					analyticalValue = main.meanValuesList.getSum(symbol.name());
-				System.out.println(symbol.convert(analyticalValue) + "\t" + symbol.getLabel());
+				String value = symbol.convert(analyticalValue);
+				String label = symbol.getLabel();
+				if (main.saveCSV)
+					main.csv.writeLine(label, value);
+				System.out.println(value + "\t" + label);
+			}
+			if (main.saveCSV) {
+				try {
+					main.csv.writeToFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+					return;
+				}
 			}
 		}
 	}
@@ -136,6 +166,10 @@ public class Main {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return;
+		}
+		if (saveCSV) {
+			csv = new UtilsCSV(CSVdirectory);
+			writeCSVHeader();
 		}
 		if (mode.equals("manual")) {
 			/* No input path provided will pop up JFileChooser */
@@ -165,6 +199,7 @@ public class Main {
 			}
 		} else {
 			System.out.println(">>> Invalid mode '" + mode + "'");
+			return;
 		}
 	}
 
@@ -318,10 +353,36 @@ public class Main {
 		if (!livePrinting)
 			for (int i = 0; i < timesteps.size(); i++)
 				System.out.printf("%.6f ms\t%g%%\n", timesteps.get(i)/1E6, 100*fractions.get(i));
+				
+		if (saveCSV) {
+			csv.writeLine(
+					instance.getName(),
+					Integer.toString(instance.getNumberOfCustomers()),
+					Double.toString(initialFraction),
+					Double.toString(finalFraction),
+					Double.toString(timesteps.get(timesteps.size()-1)/1E6));
+		}
 		
 		return true;
 	}
 
+	public void writeCSVHeader() {
+		csv.writeLine("Mode", mode);
+		if (mode.equals("auto")) {
+			csv.writeLine("Input file", inputFilePath);
+			csv.writeLine("Instance directory", instanceDirPath);
+		}
+		csv.writeLine("Best known solution file", bksPath);
+		csv.writeLine("Constructive metaheuristic", constructiveMetaheuristic);
+		csv.writeLine("Random seed", Long.toString(seed));
+		csv.writeLine("Gamma set size", Integer.toString(gammak));
+		csv.writeLine("Seconds per instance", Double.toString(secondsPerInstance));
+		csv.writeLine("Pertubation fraction", Double.toString(IlsPertubationFraction));
+		csv.writeLine("Solution quality threshold", Double.toString(qualityThreshold));
+		csv.writeLine();
+		csv.writeLine(csvColumns);
+	}
+	
 	public String formatBKSComparison(double fraction) {
 		if (fraction == 0) {
 			return "(Optimal solution)";

@@ -10,5 +10,4 @@ fscost=true
 optcnt=true
 -seconds
 10
--threshold
-0.0
+-csv
