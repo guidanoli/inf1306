@@ -66,7 +66,7 @@ public class Main {
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
 	
-	@Parameter(names = {"-gammak"}, description = "Closest neighbours size", validateWith = PositiveInteger.class)
+	@Parameter(names = {"-gammak"}, description = "Closest neighbours set maximum size", validateWith = PositiveInteger.class)
 	int gammak = 20;
 	
 	@Parameter(names = {"-gamma"}, description = "Display gamma set")
@@ -93,9 +93,12 @@ public class Main {
 	@Parameter(names = {"-csv"}, description =  "Save results in a .csv file in the -csvdir directory")
 	boolean saveCSV = false;
 	
+	@Parameter(names = {"-csvts"}, description = "Save improvements time stamps in a .csv file in the -csvdir directory")
+	boolean saveTimeSteps = false;
+	
 	AnalyticalValuesList meanValuesList = new AnalyticalValuesList();
 	BestKnownSolutions bestKnownSolutions;
-	UtilsCSV csv;
+	UtilsCSV csv, csvTimeStamps;
 	
 	String [] csvColumns = {
 		"Instance name",
@@ -145,6 +148,7 @@ public class Main {
 			if (main.saveCSV) {
 				try {
 					main.csv.writeToFile();
+					main.csvTimeStamps.writeToFile();
 				} catch (IOException e) {
 					e.printStackTrace();
 					return;
@@ -168,8 +172,12 @@ public class Main {
 			return;
 		}
 		if (saveCSV) {
-			csv = new UtilsCSV(CSVdirectory);
-			writeCSVHeader();
+			csv = new UtilsCSV("Report", CSVdirectory);
+			writeCSVHeader(csv);
+			csv.writeLine(csvColumns);
+			
+			csvTimeStamps = new UtilsCSV("TS", CSVdirectory);
+			writeCSVHeader(csvTimeStamps);
 		}
 		if (mode.equals("manual")) {
 			/* No input path provided will pop up JFileChooser */
@@ -353,7 +361,16 @@ public class Main {
 		if (!livePrinting)
 			for (int i = 0; i < timesteps.size(); i++)
 				System.out.printf("%.6f ms\t%g%%\n", timesteps.get(i)/1E6, 100*fractions.get(i));
-				
+		
+		if (saveTimeSteps) {
+			csvTimeStamps.writeLine(instance.getName());
+			for (int i = 0; i < timesteps.size(); i++) {
+				String strTS = String.format("%.6f", timesteps.get(i)/1E6);
+				Double fraction = fractions.get(i);
+				csvTimeStamps.writeLine(strTS, Double.toString(fraction));
+			}
+		}
+		
 		if (saveCSV) {
 			csv.writeLine(
 					instance.getName(),
@@ -366,7 +383,7 @@ public class Main {
 		return true;
 	}
 
-	public void writeCSVHeader() {
+	public void writeCSVHeader(UtilsCSV csv) {
 		csv.writeLine("Mode", mode);
 		if (mode.equals("auto")) {
 			csv.writeLine("Input file", inputFilePath);
@@ -380,7 +397,6 @@ public class Main {
 		csv.writeLine("Pertubation fraction", Double.toString(IlsPertubationFraction));
 		csv.writeLine("Solution quality threshold", Double.toString(qualityThreshold));
 		csv.writeLine();
-		csv.writeLine(csvColumns);
 	}
 	
 	public String formatBKSComparison(double fraction) {

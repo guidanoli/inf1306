@@ -15,9 +15,11 @@ public class UtilsCSV {
 	static String separator = ";";
 	
 	File directory;
+	String prefix;
 	ArrayList<String> dataLines = new ArrayList<>();
 	
-	public UtilsCSV(File dir) {
+	public UtilsCSV(String prefix, File dir) {
+		this.prefix = prefix;
 		this.directory = dir;
 	}
 	
@@ -51,7 +53,7 @@ public class UtilsCSV {
 	public void writeToFile() throws IOException {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
 		Date date = new Date();
-		String filename = dateFormat.format(date) + ".csv";
+		String filename = String.format("%s_%s.csv", prefix, dateFormat.format(date));
 		String fullPath = Paths.get(directory.getAbsolutePath(),filename).toString();
 		File file = new File(fullPath);
 	    try (PrintWriter pw = new PrintWriter(file)) {
