@@ -82,9 +82,10 @@ public class LocalSearch {
 								improved = ri.intra2Opt(ciIndex, cjIndex, dmatrix, true);
 								break;
 							case 3:
-								int riSize = ri.size();
-								int z = riSize - cjIndex - 1 > 0 ? random.nextInt(riSize - cjIndex - 1) + cjIndex + 1 : 0;
-								improved = ri.intraShift2(ciIndex, cjIndex, z, dmatrix, true);
+								for (int z = cjIndex + 1; z < ri.size(); z++) {
+									improved = ri.intraShift2(ciIndex, cjIndex, z, dmatrix, true);
+									if (improved) break;
+								}
 								break;
 						}
 					} else {
@@ -183,9 +184,10 @@ public class LocalSearch {
 								applied = ri.intra2Opt(ciIndex, cjIndex, dmatrix, false);
 								break;
 							case 3:
-								int riSize = ri.size();
-								int z = riSize - cjIndex - 1 > 0 ? random.nextInt(riSize - cjIndex - 1) + cjIndex + 1 : 0;
-								applied = ri.intraShift2(ciIndex, cjIndex, z, dmatrix, true);
+								for (int z = cjIndex + 1; z < ri.size(); z++) {
+									applied = ri.intraShift2(ciIndex, cjIndex, z, dmatrix, true);
+									if (applied) break;
+								}
 								break;
 						}
 					} else {
