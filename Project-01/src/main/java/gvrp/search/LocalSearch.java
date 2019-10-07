@@ -17,7 +17,7 @@ public class LocalSearch {
 	
 	/* Attempt to make a move with two customers and 
 	 * returns whether it was successful or not */
-	int numOfNeighbourhoodLevels = 3;
+	int numOfNeighbourhoodLevels = 4;
 	
 	public LocalSearch(long seed) {
 		random.setSeed(seed);
@@ -80,6 +80,11 @@ public class LocalSearch {
 								break;
 							case 2:
 								improved = ri.intra2Opt(ciIndex, cjIndex, dmatrix, true);
+								break;
+							case 3:
+								int riSize = ri.size();
+								int z = riSize - cjIndex - 1 > 0 ? random.nextInt(riSize - cjIndex - 1) + cjIndex + 1 : 0;
+								improved = ri.intraShift2(ciIndex, cjIndex, z, dmatrix, true);
 								break;
 						}
 					} else {
@@ -176,6 +181,11 @@ public class LocalSearch {
 								break;
 							case 2:
 								applied = ri.intra2Opt(ciIndex, cjIndex, dmatrix, false);
+								break;
+							case 3:
+								int riSize = ri.size();
+								int z = riSize - cjIndex - 1 > 0 ? random.nextInt(riSize - cjIndex - 1) + cjIndex + 1 : 0;
+								applied = ri.intraShift2(ciIndex, cjIndex, z, dmatrix, true);
 								break;
 						}
 					} else {

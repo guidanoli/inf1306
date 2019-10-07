@@ -779,6 +779,83 @@ public class Route extends LinkedList<Customer> {
 		return true;
 	}
 	
+
+	/**
+	 * Shifts a sequence of customers within a route
+	 * @param p - position of customer in this route
+	 * @param q - position of another customer in this route (to the right)
+	 * @param dmatrix - distance matrix
+	 * @param onlyImprove - whether to apply move only if total cost is improved
+	 * @return success or not
+	 */
+	public boolean intraShift2(int p, int q, int z, DistanceMatrix dmatrix, boolean onlyImprove) {
+		int size = size();
+		if (size < 3) return false;
+		
+		/* Filtering arbitrary input
+		 * such that -1 <= x < p < q < y <= z < w <= size */
+		p = Math.abs(p) % size;
+		q = Math.abs(q) % size;
+		p = Math.min(p, q);
+		q = Math.max(p, q);
+		z = Math.abs(z) % size;
+		
+		if (p == q) return false;
+		if (q >= z) return false;		
+		
+		/*
+		 * Calculating the delta of route cost by the following expression
+		 * 
+		 * BEFORE
+		 * ... -- x -- p -- ... -- q -- y -- ... -- z -- w -- ...
+		 * 
+		 * AFTER
+		 * ... -- x -- y -- ... -- z -- p -- ... -- q -- w -- ...
+		 * 
+		 * delta = dxy + dzp + dqw - dxp - dqy - dzw
+		 */
+		
+		int x = p - 1, y = q + 1, w = z + 1; /* vertices */
+		/* if x == -1, x is depot. if w == size, w is depot */
+		int dxy, dzp, dqw, dxp, dqy, dzw; /* distances */
+		Customer cx = null, cy = null, cw = null, cp = get(p), cq = get(q), cz = get(z);
+		
+		if (x != -1) cx = get(x);
+		cy = get(y);
+		if (w != size) cw = get(w);
+		
+		if (cx == null) {
+			dxy = dmatrix.getDistanceFromDepot(cy);
+			dxp = dmatrix.getDistanceFromDepot(cp);
+		} else {
+			dxy = dmatrix.getDistanceBetween(cx, cy);
+			dxp = dmatrix.getDistanceBetween(cx, cp);
+		}
+		
+		if (cw == null) {
+			dzw = dmatrix.getDistanceFromDepot(cz);
+			dqw = dmatrix.getDistanceFromDepot(cq);
+		} else {
+			dzw = dmatrix.getDistanceBetween(cz, cw);
+			dqw = dmatrix.getDistanceBetween(cq, cw);
+		}
+		
+		dzp = dmatrix.getDistanceBetween(cz, cp);
+		dqy = dmatrix.getDistanceBetween(cq, cy);
+		
+		int delta = dxy + dzp + dqw - dxp - dqy - dzw;
+		/* Does not accept solutions of same cost */
+		if (delta >= 0 && onlyImprove) return false;
+		
+		/* Local search is then applied */
+		for (int i = p; i <= q; ++i)
+			add(z, remove(p));
+		
+		recalculateDistanceMap(cx == null ? p : x, cw == null ? z : w, dmatrix);
+		
+		return true;
+	}
+	
 	public void findShortestPath(DistanceMatrix dmatrix) {
 		if (isEmpty()) return; /* Do nothing for empty routes */
 		

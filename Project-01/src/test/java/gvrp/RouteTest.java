@@ -133,6 +133,19 @@ class RouteTest {
 			testIntraMove(n, (p,q,d,o) -> route.intra2Opt(p,q,d,o));
 		}
 		
+		@RepeatedTest(value = numOfRoutes)
+		@DisplayName("after intra shift(2,0)")
+		void testIntraShift2(RepetitionInfo info) {
+			int n = info.getCurrentRepetition() - 1;
+			final Random random = new Random();
+			testIntraMove(n, (p,q,d,o) -> {
+				int z = 0;
+				int size = route.size();
+				if (size > 3 && size - q - 1 > 0) z = random.nextInt(size - q - 1) + q + 1;
+				return route.intraShift2(p,q,z,d,o);
+			});
+		}
+		
 		@RepeatedTest(value = numOfRoutes*numOfRoutes)
 		@DisplayName("after inter shift")
 		void testInterShift(RepetitionInfo info) {
