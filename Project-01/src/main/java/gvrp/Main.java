@@ -96,9 +96,13 @@ public class Main {
 	@Parameter(names = {"-csvts"}, description = "Save improvements time stamps in a .csv file in the -csvdir directory")
 	boolean saveTimeSteps = false;
 	
+	@Parameter(names = {"-view"}, description = "View the solution as a graph")
+	boolean viewGraph = false;
+	
 	AnalyticalValuesList meanValuesList = new AnalyticalValuesList();
 	BestKnownSolutions bestKnownSolutions;
 	UtilsCSV csv, csvTimeStamps;
+	GraphViewer viewer;
 	
 	String [] csvColumns = {
 		"Instance name",
@@ -125,36 +129,6 @@ public class Main {
 			return;
 		}
 		main.run();
-		if (!main.meanValuesList.isEmpty()) {
-			System.out.println("Analytics:");
-			if (main.saveCSV)
-				main.csv.writeLine();
-			TreeSet<AnalyticalValuesLabels> sortedMeanValues = new TreeSet<>((sym1,sym2) -> {
-				return sym1.getPosition()-sym2.getPosition();
-			});
-			main.meanValuesList.forEach((k,v)->sortedMeanValues.add(AnalyticalValuesLabels.valueOf(k)));
-			for (AnalyticalValuesLabels symbol : sortedMeanValues) {
-				Double analyticalValue;
-				if (symbol.takesTheMean())
-					analyticalValue = main.meanValuesList.getMean(symbol.name());
-				else
-					analyticalValue = main.meanValuesList.getSum(symbol.name());
-				String value = symbol.convert(analyticalValue);
-				String label = symbol.getLabel();
-				if (main.saveCSV)
-					main.csv.writeLine(label, value);
-				System.out.println(value + "\t" + label);
-			}
-			if (main.saveCSV) {
-				try {
-					main.csv.writeToFile();
-					main.csvTimeStamps.writeToFile();
-				} catch (IOException e) {
-					e.printStackTrace();
-					return;
-				}
-			}
-		}
 	}
 
 	/**
@@ -178,6 +152,9 @@ public class Main {
 			
 			csvTimeStamps = new UtilsCSV("TS", CSVdirectory);
 			writeCSVHeader(csvTimeStamps);
+		}
+		if (viewGraph) {
+			viewer = new GraphViewer();
 		}
 		if (mode.equals("manual")) {
 			/* No input path provided will pop up JFileChooser */
@@ -209,6 +186,38 @@ public class Main {
 			System.out.println(">>> Invalid mode '" + mode + "'");
 			return;
 		}
+		if (!meanValuesList.isEmpty()) {
+			System.out.println("Analytics:");
+			if (saveCSV)
+				csv.writeLine();
+			TreeSet<AnalyticalValuesLabels> sortedMeanValues = new TreeSet<>((sym1,sym2) -> {
+				return sym1.getPosition()-sym2.getPosition();
+			});
+			meanValuesList.forEach((k,v)->sortedMeanValues.add(AnalyticalValuesLabels.valueOf(k)));
+			for (AnalyticalValuesLabels symbol : sortedMeanValues) {
+				Double analyticalValue;
+				if (symbol.takesTheMean())
+					analyticalValue = meanValuesList.getMean(symbol.name());
+				else
+					analyticalValue = meanValuesList.getSum(symbol.name());
+				String value = symbol.convert(analyticalValue);
+				String label = symbol.getLabel();
+				if (saveCSV)
+					csv.writeLine(label, value);
+				System.out.println(value + "\t" + label);
+			}
+			if (saveCSV) {
+				try {
+					csv.writeToFile();
+					csvTimeStamps.writeToFile();
+				} catch (IOException e) {
+					e.printStackTrace();
+					return;
+				}
+			}
+		}
+		if (viewGraph)
+			viewer.setVisible(true);
 	}
 
 	/**
@@ -237,7 +246,6 @@ public class Main {
 		/* Try to parse instance file */
 		Instance instance = null;
 		try {
-			
 			instance = Instance.parse(sc, gammak, showgamma);
 		} catch (NoSuchElementException nsee) {
 			nsee.printStackTrace();
@@ -379,6 +387,9 @@ public class Main {
 					Double.toString(finalFraction),
 					Double.toString(timesteps.get(timesteps.size()-1)/1E6));
 		}
+
+		if (viewGraph)
+			viewer.addSolution(currentSolution);
 		
 		return true;
 	}

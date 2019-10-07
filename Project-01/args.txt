@@ -9,6 +9,5 @@ fscost=true
 -A
 optcnt=true
 -seconds
-120
--csv
--csvts
+1
+-view
