@@ -51,6 +51,9 @@ public class Main {
 	@Parameter(names = {"-isinfo"}, description = "Initial Solution Info")
 	boolean initialSolutionInfo = false;
 	
+	@Parameter(names = {"-fsinfo"}, description = "Final Solution Info")
+	boolean finalSolutionInfo = false;
+	
 	@Parameter(names = "-dmatrix", description = "Display distance matrix")
 	boolean displaysDistanceMatrix = false;
 	
@@ -355,6 +358,9 @@ public class Main {
 		};
 		
 		currentSolution = ils.explore(initialSolution, IlsPertubationFraction, stoppingCriterion);
+		
+		if (finalSolutionInfo)
+			System.out.println(currentSolution);
 		
 		int finalCost = currentSolution.getCost();
 		double finalFraction = bestKnownSolutions.getBKSFraction(instance, finalCost);
