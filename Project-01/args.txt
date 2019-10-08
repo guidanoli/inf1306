@@ -9,5 +9,12 @@ fscost=true
 -A
 optcnt=true
 -seconds
-1
--view
+115
+-nobks
+-csv
+-CSV
+1=name
+-CSV
+2=finalcost
+-CSV
+3=time

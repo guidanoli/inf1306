@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -78,6 +79,9 @@ public class Main {
 	@Parameter(names = {"-perturbation"}, description = "Perturbation magnitude", validateWith = ZeroToOneDouble.class)
 	double IlsPertubationFraction = 0.25;
 	
+	@Parameter(names = {"-nobks"}, description = "Ignore BKS")
+	boolean ignoreBKS = false;
+	
 	@Parameter(names = {"-threshold"}, description = "Solution quality threshold (compared to BKS)", validateWith = ZeroToOneDouble.class)
 	double qualityThreshold = 0.0;
 	
@@ -96,6 +100,15 @@ public class Main {
 	@Parameter(names = {"-csvts"}, description = "Save improvements time stamps in a .csv file in the -csvdir directory")
 	boolean saveTimeSteps = false;
 	
+	@Parameter(names = {"-csvmeta"}, description = "Include header on .csv file with metadata about instance and solution")
+	boolean addMetadataToCSV = false;
+	
+	@DynamicParameter(names = {"-CSV"}, description = "CSV data")
+	Map<String, String> csvData = new HashMap<>();
+	
+	@Parameter(names = {"-csvanalytics"}, description = "Include analytics data in CSV report")
+	boolean meanValuesOnCSV = false;
+	
 	@Parameter(names = {"-view"}, description = "View the solution as a graph")
 	boolean viewGraph = false;
 	
@@ -104,13 +117,12 @@ public class Main {
 	UtilsCSV csv, csvTimeStamps;
 	GraphViewer viewer;
 	
-	String [] csvColumns = {
-		"Instance name",
-		"Instance size",
-		"Initial solution %",
-		"Final solution %",
-		"Last iteration timestep (ms)"
-	};
+	HashMap<String, String> csvLabelMap = new HashMap<>();
+	{
+		csvLabelMap.put("name", "Instance");
+		csvLabelMap.put("finalcost", "Cost");
+		csvLabelMap.put("time", "Time (ms)");
+	}
 	
 	/**
 	 * Runs the GVRP solver according to parameters parsed in command line
@@ -148,8 +160,13 @@ public class Main {
 		if (saveCSV) {
 			csv = new UtilsCSV("Report", CSVdirectory);
 			writeCSVHeader(csv);
-			csv.writeLine(csvColumns);
 			
+			String [] columns = new String[csvData.size()];
+			Arrays.fill(columns, "");
+			csvData.forEach((k,v) -> columns[Integer.parseInt(k)-1] = csvLabelMap.get(v));
+			csv.writeLine(columns);
+		}
+		if (saveTimeSteps) {
 			csvTimeStamps = new UtilsCSV("TS", CSVdirectory);
 			writeCSVHeader(csvTimeStamps);
 		}
@@ -188,7 +205,7 @@ public class Main {
 		}
 		if (!meanValuesList.isEmpty()) {
 			System.out.println("Analytics:");
-			if (saveCSV)
+			if (saveCSV && meanValuesOnCSV)
 				csv.writeLine();
 			TreeSet<AnalyticalValuesLabels> sortedMeanValues = new TreeSet<>((sym1,sym2) -> {
 				return sym1.getPosition()-sym2.getPosition();
@@ -202,18 +219,16 @@ public class Main {
 					analyticalValue = meanValuesList.getSum(symbol.name());
 				String value = symbol.convert(analyticalValue);
 				String label = symbol.getLabel();
-				if (saveCSV)
+				if (saveCSV && meanValuesOnCSV)
 					csv.writeLine(label, value);
 				System.out.println(value + "\t" + label);
 			}
-			if (saveCSV) {
-				try {
-					csv.writeToFile();
-					csvTimeStamps.writeToFile();
-				} catch (IOException e) {
-					e.printStackTrace();
-					return;
-				}
+			try {
+				if (saveCSV) csv.writeToFile();
+				if (saveTimeSteps) csvTimeStamps.writeToFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+				return;
 			}
 		}
 		if (viewGraph)
@@ -343,7 +358,7 @@ public class Main {
 			double deltaT = System.nanoTime() - t0;
 			double bksFraction = bestKnownSolutions.getBKSFraction(s);
 			boolean continueILS = (deltaT < secondsPerInstance*1E9) &&
-					(bksFraction > qualityThreshold);
+					(ignoreBKS || bksFraction > qualityThreshold);
 			double bksDifference = fractions.get(fractions.size()-1) - bksFraction;
 			if (registerDataPoint.test(bksDifference)) {
 				if (livePrinting)
@@ -355,6 +370,8 @@ public class Main {
 		};
 		
 		currentSolution = ils.explore(initialSolution, IlsPertubationFraction, stoppingCriterion);
+		
+		double deltaTms = (System.nanoTime() - t0)/1E6;
 		
 		int finalCost = currentSolution.getCost();
 		double finalFraction = bestKnownSolutions.getBKSFraction(instance, finalCost);
@@ -380,12 +397,15 @@ public class Main {
 		}
 		
 		if (saveCSV) {
-			csv.writeLine(
-					instance.getName(),
-					Integer.toString(instance.getNumberOfCustomers()),
-					Double.toString(initialFraction),
-					Double.toString(finalFraction),
-					Double.toString(timesteps.get(timesteps.size()-1)/1E6));
+			HashMap<String, String> csvDataMap = new HashMap<>();
+			csvDataMap.put("name", instance.getName());
+			csvDataMap.put("finalcost", Double.toString(finalCost));
+			csvDataMap.put("time", Double.toString(deltaTms));
+			
+			String [] dataArray = new String[csvData.size()];
+			Arrays.fill(dataArray, "");
+			csvData.forEach((k,v) -> dataArray[Integer.parseInt(k)-1] = csvDataMap.get(v));
+			csv.writeLine(dataArray);
 		}
 
 		if (viewGraph)
@@ -395,6 +415,7 @@ public class Main {
 	}
 
 	public void writeCSVHeader(UtilsCSV csv) {
+		if (!addMetadataToCSV) return;
 		csv.writeLine("Mode", mode);
 		if (mode.equals("auto")) {
 			csv.writeLine("Input file", inputFilePath);
