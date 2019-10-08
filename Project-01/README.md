@@ -6,6 +6,10 @@ This is the version of the same project but in *Java* for portability reasons an
 
 Simply run `java -jar gvrp.jar <args...>` on your preffered terminal. The latest .JAR executable can be downloaded in the GitHub repository page. It is recommended to place the .JAR in the project root (where this very file is located at), since some default paths are relative to this root.
 
+You can also parse a file with the arguments by running `java -jar gvrp.jar @args.txt`. Beware that in these files, arguments are separater by a new line! Thankfully there is already one of those files as a demo in the project directory.
+
+**Disclaimer:** Using @filepath on Powershell will not work because of the tokenization of @ in the Powershell lex. Use the escape character tick (\`) before the @.
+
 ## Command line arguments :scroll:
 
 To list all valid arguments, type `java -jar gvrp.jar -help`. Here are some of the main commands.
