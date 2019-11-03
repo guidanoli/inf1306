@@ -62,7 +62,7 @@ public class Instance {
 		for (int i = 0; i < numOfEntities; i++) {
 			Point entity = new Point(i, dimensions); 
 			for (int j = 0; j < dimensions; j++)
-				entity.add(sc.nextDouble());
+				entity.set(j, sc.nextDouble());
 			builder.addEntity(entity);
 		}
 		try {

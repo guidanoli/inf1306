@@ -3,3 +3,4 @@ data/MSSC
 -ifile
 all.txt
 -isinfo
+-verbose

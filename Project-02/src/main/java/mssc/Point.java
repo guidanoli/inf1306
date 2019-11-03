@@ -11,6 +11,7 @@ public class Point extends ArrayList<Double>{
 	
 	public Point(int id, int numOfDimensions) {
 		super(numOfDimensions);
+		for (int i = 0; i < numOfDimensions; i++) add(0.0);
 		this.id = id;
 	}
 	
@@ -40,6 +41,20 @@ public class Point extends ArrayList<Double>{
 		for (Double coord : this)
 			sj.add(Double.toString(coord));
 		return "(" + sj + ")";
+	}
+	
+	@Override
+	public boolean equals(Object arg0) {
+		if (arg0 instanceof Point) {
+			Point p = (Point) arg0;
+			int size = size();
+			if (size != p.size()) return false;
+			for (int i = 0; i < size; i++) {
+				if (get(i) != p.get(i)) return false;
+			}
+			return true;
+		}
+		return false;
 	}
 	
 }

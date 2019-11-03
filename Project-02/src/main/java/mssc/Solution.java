@@ -50,6 +50,12 @@ public class Solution extends ArrayList<Cluster> {
 		return true;
 	}
 	
+	public double getCost() {
+		return stream()
+				.mapToDouble((c) -> c.sumOfSquares())
+				.sum();
+	}
+	
 	@Override
 	public String toString() {
 		StringJoiner sj = new StringJoiner("\n");

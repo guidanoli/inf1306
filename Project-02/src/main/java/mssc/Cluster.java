@@ -44,7 +44,7 @@ public class Cluster extends HashSet<Point> {
 			}
 			sj.add(p.toShorterString());
 		}
-		return "{" + sj + "} (" + size() + " entities)";
+		return "{" + sj + "} (" + size() + " entities) (cost = " + sumOfSquares() + ")";
 	}
 	
 }

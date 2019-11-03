@@ -183,6 +183,11 @@ public class Main {
 			return false;
 		}
 		
+		double initialSolutionCost = initialSolution.getCost();
+		
+		if (isVerbose)
+			System.out.println("Initial solution cost: " + initialSolutionCost);
+		
 		return true;
 	}
 	
