@@ -1,22 +1,45 @@
 package mssc;
 
-/**
- * 
- * A point is an array of integers, such that the i-th integer
- * in the array represents the i-th coordinate in the R^n space.
- * 
- * This class eases arithmetic operations such as means and
- * distances, which are crucial to the MSSC problem.
- * 
- * @author guidanoli
- *
- */
-public class Point {
+import java.util.ArrayList;
+import java.util.StringJoiner;
 
-	int coordinates[];
+public class Point extends ArrayList<Double>{
+
+	private static final long serialVersionUID = 1489868924280779119L;
+
+	int id;
 	
-	public Point(int [] coordinates) {
-		this.coordinates = coordinates;
+	public Point(int id, int numOfDimensions) {
+		super(numOfDimensions);
+		this.id = id;
+	}
+	
+	/**
+	 * Obtain the distance between two points as the
+	 * Euclidian distance squared
+	 * @param anotherPoint - another point
+	 * @return <code>sum((xi - yi)^2, i=1..n)</code>
+	 */
+	public double getSumOfSquaresTo(Point anotherPoint) {
+		double sumOfSquares = 0.0;
+		double diff;
+		for (int i = 0; i < size(); i++) {
+			diff = get(i) - anotherPoint.get(i);
+			sumOfSquares += diff * diff;
+		}
+		return sumOfSquares;
+	}
+		
+	public String toShorterString() {
+		return "e" + id;
+	}
+	
+	@Override
+	public String toString() {
+		StringJoiner sj = new StringJoiner(", ");
+		for (Double coord : this)
+			sj.add(Double.toString(coord));
+		return "(" + sj + ")";
 	}
 	
 }
