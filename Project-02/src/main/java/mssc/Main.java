@@ -42,6 +42,9 @@ public class Main {
 	@Parameter(names = {"-isinfo"}, description = "Initial Solution Info")
 	boolean initialSolutionInfo = false;
 	
+	@Parameter(names = {"-fsinfo"}, description = "Final Solution Info")
+	boolean finalSolutionInfo = false;
+	
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
 	
@@ -187,6 +190,16 @@ public class Main {
 		
 		if (isVerbose)
 			System.out.println("Initial solution cost: " + initialSolutionCost);
+				
+		initialSolution.kMeans();
+		
+		double finalSolutionCost = initialSolution.getCost();
+		
+		if (finalSolutionInfo)
+			System.out.println(initialSolution);
+		
+		if (isVerbose)
+			System.out.println("Final solution cost: " + finalSolutionCost);
 		
 		return true;
 	}

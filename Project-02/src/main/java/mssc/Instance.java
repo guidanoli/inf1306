@@ -60,7 +60,7 @@ public class Instance {
 		int numOfEntities = sc.nextInt();
 		int dimensions = sc.nextInt();
 		for (int i = 0; i < numOfEntities; i++) {
-			Point entity = new Point(i, dimensions); 
+			Point entity = new Point(i+1, dimensions); 
 			for (int j = 0; j < dimensions; j++)
 				entity.set(j, sc.nextDouble());
 			builder.addEntity(entity);
@@ -98,8 +98,8 @@ public class Instance {
 	public String toString() {
 		StringJoiner sj = new StringJoiner("\n");
 		sj.add("#clusters = " + numOfClusters);
-		for (int i = 0; i < getNumOfEntities(); i++)
-			sj.add("o" + (i+1) + " = " + getEntityAt(i));
+		for (Point e : entities)
+			sj.add("o" + e.getId() + " = " + e);
 		return sj.toString();
 	}
 	

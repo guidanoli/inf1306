@@ -65,7 +65,7 @@ class PointTest {
 	@DisplayName("Any point")
 	void testEqualsItself(RepetitionInfo info) {
 		int n = info.getCurrentRepetition() - 1;
-		Point copy = new Point(p[n].id, p[n].size());
+		Point copy = new Point(p[n].getId(), p[n].size());
 		for (int i = 0; i < p[n].size(); i++)
 			copy.set(i, p[n].get(i));
 		assertEquals(p[n], copy,

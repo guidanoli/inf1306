@@ -1,6 +1,7 @@
 package mssc;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 public class Point extends ArrayList<Double>{
@@ -35,6 +36,15 @@ public class Point extends ArrayList<Double>{
 		return "e" + id;
 	}
 	
+	public int getId() {
+		return id;
+	}
+	
+	public void copyFrom(Point anotherPoint) {
+		clear();
+		addAll(anotherPoint);
+	}
+	
 	@Override
 	public String toString() {
 		StringJoiner sj = new StringJoiner(", ");
@@ -55,6 +65,11 @@ public class Point extends ArrayList<Double>{
 			return true;
 		}
 		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hash(super.hashCode(), id);
 	}
 	
 }
