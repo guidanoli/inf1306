@@ -60,7 +60,7 @@ public class Instance {
 		int numOfEntities = sc.nextInt();
 		int dimensions = sc.nextInt();
 		for (int i = 0; i < numOfEntities; i++) {
-			Point entity = new Point(i+1, dimensions); 
+			Point entity = new Point(i+1, "e", dimensions); 
 			for (int j = 0; j < dimensions; j++)
 				entity.set(j, sc.nextDouble());
 			builder.addEntity(entity);

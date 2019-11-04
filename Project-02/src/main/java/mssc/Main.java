@@ -70,6 +70,7 @@ public class Main {
 	 * parsed to the application.
 	 */
 	public void run() {
+		SolutionFactory.setRandomSeed(seed);
 		if (mode.equals("manual")) {
 			/* No input path provided will pop up JFileChooser */
 			File instanceFile = promptForFolder();

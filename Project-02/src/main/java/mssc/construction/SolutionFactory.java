@@ -23,7 +23,7 @@ public class SolutionFactory {
 		return cmh.construct(instance, random);
 	}
 	
-	public void setRandomSeed(long seed) {
+*	public static void setRandomSeed(long seed) {
 		random.setSeed(seed);
 	}
 	

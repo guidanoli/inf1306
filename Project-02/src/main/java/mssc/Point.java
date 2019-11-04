@@ -9,11 +9,13 @@ public class Point extends ArrayList<Double>{
 	private static final long serialVersionUID = 1489868924280779119L;
 
 	int id;
+	String prefix;
 	
-	public Point(int id, int numOfDimensions) {
+	public Point(int id, String prefix, int numOfDimensions) {
 		super(numOfDimensions);
 		for (int i = 0; i < numOfDimensions; i++) add(0.0);
 		this.id = id;
+		this.prefix = prefix;
 	}
 	
 	/**
@@ -33,7 +35,7 @@ public class Point extends ArrayList<Double>{
 	}
 		
 	public String toShorterString() {
-		return "e" + id;
+		return prefix + id;
 	}
 	
 	public int getId() {
@@ -50,7 +52,7 @@ public class Point extends ArrayList<Double>{
 		StringJoiner sj = new StringJoiner(", ");
 		for (Double coord : this)
 			sj.add(Double.toString(coord));
-		return "(" + sj + ")";
+		return toShorterString() + "(" + sj + ")";
 	}
 	
 	@Override
