@@ -1,6 +1,7 @@
 package mssc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.StringJoiner;
@@ -17,7 +18,7 @@ public class Solution extends HashMap<Point, Point> {
 	public Solution(Instance instance) {
 		this.instance = instance;
 		for (int i = 0; i < instance.getNumOfClusters(); i++)
-			clusters.add(new Point(i+1, instance.getDimension()));
+			clusters.add(new Point(i+1, "c", instance.getDimension()));
 			
 	}
 	
@@ -63,9 +64,30 @@ public class Solution extends HashMap<Point, Point> {
 	 * Until stability is achieved.
 	 */
 	public void kMeans() {
-		boolean changedState;
+		HashMap<Point, Point> changedEntities = new HashMap<>();
+		int [] clusterSizes = new int[clusters.size()+1];
+		Arrays.fill(clusterSizes, 0);
+		for (Point e : keySet())
+			++clusterSizes[get(e).getId()];
+		
+		/* Finding centroids first */
+		for (Point c : clusters)
+		c.replaceAll((d) -> 0.0); /* Zero the clusters */
+			
+		for (Point e : keySet()) {
+			Point c = get(e);
+			for (int i = 0; i < instance.getDimension(); i++)
+				c.set(i, e.get(i) + c.get(i)); /* Sums itself to the cluster */
+		}
+		
+		for (Point c : clusters) {
+			int cSize = clusterSizes[c.getId()];
+			for (int i = 0; i < instance.getDimension(); i++)
+				c.set(i, c.get(i) / cSize);
+		}
+		
 		do {
-			changedState = false; /* Assume unchanged */
+			changedEntities.clear(); /* Forgets changed entities */
 			
 			/* Assigning each entity to its closest cluster */
 			for (Point e : keySet()) {
@@ -78,36 +100,32 @@ public class Solution extends HashMap<Point, Point> {
 						ec = c;
 					}
 				}
-				if (get(e) != ec) {
+				Point prevC = get(e);
+				if (prevC != ec) {
 					put(e, ec);
-					changedState = true;
+					changedEntities.put(e, prevC);
 				}
 			}
 			
-			if (!changedState)
+			if (changedEntities.isEmpty())
 				break; /* If clusters didn't change, don't even bother... */
-			
+
 			/* Aligning the cluster to the centroid of its entities */
-			int [] clusterSizes = new int[clusters.size()+1];
-					
-			for (Point c : clusters) {
-				c.replaceAll((d) -> 0.0); /* Zero the clusters */
-				clusterSizes[c.getId()] = 0;
-			}
-					
-			for (Point e : keySet()) {
-				Point c = get(e);
-				for (int i = 0; i < instance.getDimension(); i++)
-					c.set(i, e.get(i) + c.get(i)); /* Sums itself to the cluster */
-				++clusterSizes[c.getId()];
-			}
+			int dimension = instance.getDimension();
+			changedEntities.forEach((e,iCluster) -> {
+				Point fCluster = get(e);
+				int fSize = clusterSizes[fCluster.getId()];
+				int iSize = clusterSizes[iCluster.getId()];
+				for (int i = 0; i < dimension; i++) {
+					double ei = e.get(i);
+					iCluster.set(i, (iCluster.get(i) * iSize - ei) / (iSize - 1));
+					fCluster.set(i, (fCluster.get(i) * fSize + ei) / (fSize + 1));
+				}
+				++clusterSizes[fCluster.getId()];
+				--clusterSizes[iCluster.getId()];
+			});
 			
-			for (Point c : clusters) {
-				int cSize = clusterSizes[c.getId()];
-				for (int i = 0; i < instance.getDimension(); i++)
-					c.set(i, c.get(i) / cSize);
-			}
-		} while (changedState);
+		} while (!changedEntities.isEmpty());
 	}
 		
 	@Override

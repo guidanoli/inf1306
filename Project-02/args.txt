@@ -3,3 +3,5 @@ data/MSSC
 -ifile
 all.txt
 -verbose
+-seed
+1

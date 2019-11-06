@@ -24,14 +24,14 @@ class PointTest {
 			/* i = b1b2b3... where bn is whether the 
 			 * i-th point will have a positive or
 			 * negative n-th coordinate */
-			p[i] = new Point(i, D);
+			p[i] = new Point(i, "e", D);
 			for (int j = 0; j < D; j++) {
 				boolean positiveValue = ((i >> j) & 1) == 0;
 				p[i].set(j, positiveValue ? 1.0 : -1.0);					
 			}
 		}
 		/* Origin */
-		p[Q-1] = new Point(Q-1, D);
+		p[Q-1] = new Point(Q-1, "e", D);
 		for (int i = 0; i < D; i++)
 			p[Q-1].set(i, 0.0);
 	}
@@ -65,7 +65,7 @@ class PointTest {
 	@DisplayName("Any point")
 	void testEqualsItself(RepetitionInfo info) {
 		int n = info.getCurrentRepetition() - 1;
-		Point copy = new Point(p[n].getId(), p[n].size());
+		Point copy = new Point(p[n].getId(), "e", p[n].size());
 		for (int i = 0; i < p[n].size(); i++)
 			copy.set(i, p[n].get(i));
 		assertEquals(p[n], copy,
