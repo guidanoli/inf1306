@@ -3,6 +3,7 @@ package mssc;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -82,9 +83,16 @@ public class Main {
 			Scanner sc = null;
 			try {
 				sc = new Scanner(inputFile);
+				sc.useLocale(Locale.US); /* Doubles uses dots */
 				while (sc.hasNextLine()) {
 					String instanceFilePath = Paths.get(instanceDirPath, sc.nextLine()).toString();
 					File instanceFile = new File(instanceFilePath);
+					if (!instanceFile.exists()) {
+						System.out.println(">>> File "+instanceFilePath+" could not be opened!");
+						/* -persist will continue parsing */
+						if (!isPersistant)
+							break;
+					}
 					if (!solveInstance(instanceFile)) {
 						System.out.println(">>> Could not solve instance!");
 						/* -persist will continue parsing */
@@ -142,6 +150,7 @@ public class Main {
 		Scanner sc = null;
 		try {
 			sc = new Scanner(instanceFile);
+			sc.useLocale(Locale.US); /* Doubles uses dots */
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return false;
@@ -153,17 +162,19 @@ public class Main {
 			instance = Instance.parse(sc, firstNumber);
 		} catch (NoSuchElementException nsee) {
 			nsee.printStackTrace();
+			sc.close();
 			return false;
 		} catch (IllegalStateException ilse) {
 			ilse.printStackTrace();
+			sc.close();
 			return false;
 		} catch (Exception e) {
 			e.printStackTrace();
+			sc.close();
 			return false;
 		}
-		
 		sc.close();
-		
+				
 		if (instanceInfo)
 			System.out.println(instance);
 		
