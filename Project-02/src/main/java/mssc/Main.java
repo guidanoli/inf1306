@@ -14,7 +14,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
-import mssc.Solution;
 import mssc.construction.SolutionFactory;
 
 public class Main {
@@ -40,11 +39,14 @@ public class Main {
 	@Parameter(names = "-constructive", description = "Constructive metaheuristic")
 	String constructiveMetaheuristic = "random";
 	
-	@Parameter(names = {"-isinfo"}, description = "Initial Solution Info")
-	boolean initialSolutionInfo = false;
+	@Parameter(names = {"-ipinfo"}, description = "Initial Population Info")
+	boolean initialPopulationInfo = false;
 	
-	@Parameter(names = {"-fsinfo"}, description = "Final Solution Info")
-	boolean finalSolutionInfo = false;
+	@Parameter(names = {"-fpinfo"}, description = "Final Population Info")
+	boolean finalPopulationInfo = false;
+	
+	@Parameter(names = {"-ipsize"}, description = "Initial Population Size")
+	int initialPopulationSize = 100;
 	
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
@@ -174,44 +176,19 @@ public class Main {
 			return false;
 		}
 		sc.close();
-				
+		
+		if (instance == null) {
+			System.out.println(">>> Parsing error");
+			return false;
+		}
+		
 		if (instanceInfo)
 			System.out.println(instance);
 		
-		if (isVerbose)
-			System.out.println("Constructing initial solution with '" + constructiveMetaheuristic +
-					"' constructive metaheuristic");
+		Population population = new Population(instance, initialPopulationSize, constructiveMetaheuristic);
 		
-		Solution initialSolution = SolutionFactory.construct(instance, constructiveMetaheuristic);
-		
-		if (initialSolution == null) {
-			System.out.printf(">>> '%s' is not a valid constructive metaheuristic.\n",
-					constructiveMetaheuristic);
-			return false;
-		}
-
-		if (initialSolutionInfo)
-			System.out.println(initialSolution);
-		
-		if (!initialSolution.isValid(isVerbose)) {
-			System.out.println(">>> Initial solution is invalid.");
-			return false;
-		}
-		
-		double initialSolutionCost = initialSolution.getCost();
-		
-		if (isVerbose)
-			System.out.println("Initial solution cost: " + initialSolutionCost);
-				
-		initialSolution.kMeans();
-		
-		double finalSolutionCost = initialSolution.getCost();
-		
-		if (finalSolutionInfo)
-			System.out.println(initialSolution);
-		
-		if (isVerbose)
-			System.out.println("Final solution cost: " + finalSolutionCost);
+		if (initialPopulationInfo)
+			System.out.println(population);
 		
 		return true;
 	}

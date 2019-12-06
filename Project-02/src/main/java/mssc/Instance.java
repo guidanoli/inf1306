@@ -57,12 +57,16 @@ public class Instance {
 			NoSuchElementException, IllegalStateException, InputMismatchException {
 		Builder builder = new Builder();
 		builder.setNumOfClusters(numOfClusters);
+		if (!sc.hasNextInt()) return null;
 		int numOfEntities = sc.nextInt();
+		if (!sc.hasNextInt()) return null;
 		int dimensions = sc.nextInt();
 		for (int i = 0; i < numOfEntities; i++) {
 			Point entity = new Point(i+1, "e", dimensions); 
-			for (int j = 0; j < dimensions; j++)
+			for (int j = 0; j < dimensions; j++) {
+				if (!sc.hasNextDouble()) return null;
 				entity.set(j, sc.nextDouble());
+			}
 			builder.addEntity(entity);
 		}
 		try {

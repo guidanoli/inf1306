@@ -3,5 +3,6 @@ data/MSSC
 -ifile
 all.txt
 -verbose
+-ipinfo
 -seed
 1
