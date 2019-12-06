@@ -59,6 +59,7 @@ public class Instance {
 		builder.setNumOfClusters(numOfClusters);
 		if (!sc.hasNextInt()) return null;
 		int numOfEntities = sc.nextInt();
+		if  (numOfClusters > numOfEntities) return null;
 		if (!sc.hasNextInt()) return null;
 		int dimensions = sc.nextInt();
 		for (int i = 0; i < numOfEntities; i++) {

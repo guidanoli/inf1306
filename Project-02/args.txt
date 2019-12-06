@@ -4,5 +4,6 @@ data/MSSC
 all.txt
 -verbose
 -ipinfo
+-fpinfo
 -seed
 1

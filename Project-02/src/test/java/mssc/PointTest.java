@@ -13,7 +13,7 @@ class PointTest {
 	final static int D = 4;
 	
 	/* Number of points for all quadrants plus origin */
-	final static int Q = (2 << D) + 1;
+	final static int Q = (1 << D) + 1;
 	
 	final static Point [] p = new Point[Q];
 	

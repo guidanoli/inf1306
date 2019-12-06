@@ -48,6 +48,12 @@ public class Main {
 	@Parameter(names = {"-ipsize"}, description = "Initial Population Size")
 	int initialPopulationSize = 100;
 	
+	@Parameter(names = {"-maxpsize"}, description = "Maximum Population Size")
+	int maxPopulationSize = 150;
+	
+	@Parameter(names = {"-tournamentK"}, description = "Number of parents per tournament")
+	int tournamentK = 2;
+	
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
 	
@@ -128,24 +134,15 @@ public class Main {
 
 		System.out.println(instanceFile);
 		
-		String filename = instanceFile.toPath().getFileName().toString();
-		String firstNumberStr = filename.replaceAll(".*?(\\d+).*", "$1");
-		
 		Integer firstNumber = null;
 		try {
-			firstNumber = Integer.parseInt(firstNumberStr);
-		} catch (NumberFormatException nfe) {
-			System.out.println("Could not find number in instance file name for number of clusters.");
-			System.out.println("Prompting user for input.");
-			try {
-				do {
-					firstNumber = Integer.parseInt(JOptionPane
-							.showInputDialog("Insert the number of clusters:"));
-				} while (firstNumber != null && firstNumber <= 0);
-			} catch (NumberFormatException nfe2) {
-				System.out.println(">>> Invalid input");
-				return false;
-			}
+			do {
+				firstNumber = Integer.parseInt(JOptionPane
+						.showInputDialog("Insert the number of clusters:"));
+			} while (firstNumber != null && firstNumber <= 0);
+		} catch (NumberFormatException nfe2) {
+			System.out.println(">>> Invalid input");
+			return false;
 		}
 				
 		/* Try to create Scanner object */
@@ -185,10 +182,27 @@ public class Main {
 		if (instanceInfo)
 			System.out.println(instance);
 		
-		Population population = new Population(instance, initialPopulationSize, constructiveMetaheuristic);
-		
+		Population population = new Population(instance, initialPopulationSize,
+									maxPopulationSize, constructiveMetaheuristic);
+		population.setRandomSeed(seed);
+				
 		if (initialPopulationInfo)
 			System.out.println(population);
+
+		if (!population.isValid(isVerbose)) {
+			System.out.println(">>> Invalid initial population.");
+			return false;
+		}
+		
+		population.nextGeneration(tournamentK);
+		
+		if (finalPopulationInfo)
+			System.out.println(population);
+		
+		if (!population.isValid(isVerbose)) {
+			System.out.println(">>> Invalid final population.");
+			return false;
+		}
 		
 		return true;
 	}

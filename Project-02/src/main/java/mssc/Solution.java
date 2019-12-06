@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.StringJoiner;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -57,6 +58,46 @@ public class Solution extends HashMap<Point, Point> {
 			e.getKey().getSumOfSquaresTo(e.getValue())));
 	}
 	
+	public void decodeFromClusterPositions() {
+		/* Assigning each entity to its closest cluster */
+		for (Point e : instance.getEntities()) {
+			Point ec = clusters.get(0);
+			double dist = ec.getSumOfSquaresTo(e);
+			for (Point c : clusters) {
+				double cDist = c.getSumOfSquaresTo(e);
+				if (cDist < dist) {
+					dist = cDist;
+					ec = c;
+				}
+			}
+			put(e, ec);
+		}
+	}
+	
+	public Point getRandomEntityDistantFromCenter(Random rng) {
+		double distSum = 0.0;
+		for (Point e : instance.getEntities())
+			distSum += Math.sqrt(get(e).getSumOfSquaresTo(e));
+		double Fp = 0.0;
+		double u = rng.nextDouble();
+		for (Point e : instance.getEntities()) {
+			double p =  Math.sqrt(get(e).getSumOfSquaresTo(e)) / distSum;
+			Fp += p;
+			if (u <= Fp) return e;
+		}
+		return null;
+	}
+	
+	public void unassignCluster(Point c) {
+		HashSet<Point> neighbours = new HashSet<>();
+		forEach((e,ec) -> {
+			if (ec.equals(c))
+				neighbours.add(e);
+		});
+		for (Point e : neighbours)
+			remove(e);
+	}
+	
 	/**
 	 * K-means consists on switching between two procedures:
 	 * <li>Assigning each entity to its closest cluster
@@ -67,14 +108,14 @@ public class Solution extends HashMap<Point, Point> {
 		HashMap<Point, Point> changedEntities = new HashMap<>();
 		int [] clusterSizes = new int[clusters.size()+1];
 		Arrays.fill(clusterSizes, 0);
-		for (Point e : keySet())
+		for (Point e : instance.getEntities())
 			++clusterSizes[get(e).getId()];
 		
 		/* Finding centroids first */
 		for (Point c : clusters)
 		c.replaceAll((d) -> 0.0); /* Zero the clusters */
 			
-		for (Point e : keySet()) {
+		for (Point e : instance.getEntities()) {
 			Point c = get(e);
 			for (int i = 0; i < instance.getDimension(); i++)
 				c.set(i, e.get(i) + c.get(i)); /* Sums itself to the cluster */
@@ -90,7 +131,7 @@ public class Solution extends HashMap<Point, Point> {
 			changedEntities.clear(); /* Forgets changed entities */
 			
 			/* Assigning each entity to its closest cluster */
-			for (Point e : keySet()) {
+			for (Point e : instance.getEntities()) {
 				Point ec = clusters.get(0);
 				double dist = ec.getSumOfSquaresTo(e);
 				for (Point c : clusters) {
@@ -124,8 +165,28 @@ public class Solution extends HashMap<Point, Point> {
 				++clusterSizes[fCluster.getId()];
 				--clusterSizes[iCluster.getId()];
 			});
-			
+						
 		} while (!changedEntities.isEmpty());
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		if (o instanceof Solution) {
+			Solution sol = (Solution) o;
+			if (sol.instance != instance) return false;
+			for (Point myCluster : clusters) {
+				boolean contains = false;
+				for (Point solCluster : sol.clusters) {
+					if (myCluster.equals(solCluster)) {
+						contains = true;
+						break;
+					}
+				}
+				if (!contains) return false;
+			}
+			return true;
+		}
+		return false;
 	}
 		
 	@Override
