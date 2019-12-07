@@ -43,7 +43,7 @@ class SolutionTest {
 		/* Try to parse instance file */
 		instance = null;
 		try {
-			instance = Instance.parse(sc, numberOfClusters);
+			instance = Instance.parse(sc, instanceFile.getName(), numberOfClusters);
 		} catch (NoSuchElementException nsee) {
 			nsee.printStackTrace();
 		} catch (IllegalStateException ilse) {

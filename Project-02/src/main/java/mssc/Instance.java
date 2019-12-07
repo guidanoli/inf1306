@@ -12,9 +12,15 @@ public class Instance {
 		
 		int numOfClusters = 0;
 		ArrayList<Point> entitiesList = new ArrayList<>();
+		String name = null;
 		
 		public Builder setNumOfClusters(int numOfClusters) {
 			this.numOfClusters = numOfClusters;
+			return this;
+		}
+		
+		public Builder name(String name) {
+			this.name = name;
 			return this;
 		}
 		
@@ -32,6 +38,10 @@ public class Instance {
 				throw new Exception("No entities were added.");
 			}
 			
+			if (name == null) {
+				throw new Exception("No name specified");
+			}
+			
 			final int dimension = entitiesList.get(0).size();
 			boolean sameDimension = entitiesList
 					.stream()
@@ -40,20 +50,26 @@ public class Instance {
 				throw new Exception("Entities must be of same dimension.");
 			}
 						
-			return new Instance(entitiesList, numOfClusters);
+			return new Instance(entitiesList, name, numOfClusters);
 		}
 		
 	}
 	
 	ArrayList<Point> entities;
 	int numOfClusters;
+	String name;
 	
-	private Instance(ArrayList<Point> entities, int numOfClusters) {
+	private Instance(ArrayList<Point> entities, String name, int numOfClusters) {
 		this.entities = entities;
 		this.numOfClusters = numOfClusters;
+		this.name = name;
 	}
 	
-	public static Instance parse(Scanner sc, int numOfClusters) throws 
+	public String getName() {
+		return name;
+	}
+	
+	public static Instance parse(Scanner sc, String name, int numOfClusters) throws 
 			NoSuchElementException, IllegalStateException, InputMismatchException {
 		Builder builder = new Builder();
 		builder.setNumOfClusters(numOfClusters);
@@ -70,6 +86,7 @@ public class Instance {
 			}
 			builder.addEntity(entity);
 		}
+		builder.name(name);
 		try {
 			return builder.build();
 		} catch (Exception e) {

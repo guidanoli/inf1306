@@ -14,6 +14,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 
+import mssc.analysis.BestKnownSolutions;
 import mssc.construction.SolutionFactory;
 
 public class Main {
@@ -40,25 +41,30 @@ public class Main {
 	String constructiveMetaheuristic = "random";
 	
 	@Parameter(names = {"-minpsize"}, description = "Initial Population Size")
-	int initialPopulationSize = 100;
+	int minPopulationSize = 10;
 	
 	@Parameter(names = {"-maxpsize"}, description = "Maximum Population Size")
-	int maxPopulationSize = 150;
+	int maxPopulationSize = 20;
 	
 	@Parameter(names = {"-ngen"}, description = "Maximum number of generations")
-	long maxNumOfGenerations = 100;
+	long maxNumOfGenerations = 5000;
 	
 	@Parameter(names = {"-ngen-wo-improv"}, description = "Maximum number of generations without improving")
-	long noImprovementLimit = 10;
+	long noImprovementLimit = 5000;
 	
 	@Parameter(names = {"-nclusters"}, description = "Number of clusters")
 	Integer numberOfClusters = null;
+	
+	@Parameter(names = "-bks", description = "Best Known Solution file")
+	String bksPath = "data/bks.txt";
 	
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
 	
 	@Parameter(names = {"-help", "--help"}, description = "Help with application parameters", help = true)
 	boolean help = false;
+	
+	BestKnownSolutions bestKnownSolutions;
 	
 	public static void main(String[] args) {
 		Main main = new Main();
@@ -79,6 +85,15 @@ public class Main {
 	 * parsed to the application.
 	 */
 	public void run() {
+		try {
+			File bksFile = new File(bksPath);
+			Scanner bksScanner = new Scanner(bksFile);
+			bestKnownSolutions = new BestKnownSolutions(bksScanner);
+			bksScanner.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
+		}
 		SolutionFactory.setRandomSeed(seed);
 		if (mode.equals("manual")) {
 			/* No input path provided will pop up JFileChooser */
@@ -161,7 +176,7 @@ public class Main {
 		/* Try to parse instance file */
 		Instance instance = null;
 		try {
-			instance = Instance.parse(sc, numberOfClusters);
+			instance = Instance.parse(sc, instanceFile.getName(), numberOfClusters);
 		} catch (NoSuchElementException nsee) {
 			nsee.printStackTrace();
 			sc.close();
@@ -185,7 +200,7 @@ public class Main {
 		if (instanceInfo)
 			System.out.println(instance);
 		
-		Population population = new Population(instance, initialPopulationSize,
+		Population population = new Population(instance, minPopulationSize,
 									maxPopulationSize, constructiveMetaheuristic);
 		population.setRandomSeed(seed);
 
@@ -197,7 +212,7 @@ public class Main {
 		if (isVerbose)
 			System.out.println(population);
 		
-		double currentAverageFitness = population.getAverageFitness();
+		double currentBestFitness = population.getBestSolutionFitness();
 		long generationsWithoutImprovement = 0;
 		while (population.getGenerationCount() < maxNumOfGenerations) {
 			population.nextGeneration();
@@ -205,20 +220,21 @@ public class Main {
 				System.out.println(">>> Invalid population at generation " + population.getGenerationCount());
 				return false;
 			}
-			double avgFitness = population.getAverageFitness();
-			if (Double.compare(currentAverageFitness, avgFitness) == 0)
+			double bestFitness = population.getBestSolutionFitness();
+			if (Double.compare(currentBestFitness, bestFitness) == 0)
 				++generationsWithoutImprovement;
 			else
 				generationsWithoutImprovement = 0;
 			if (generationsWithoutImprovement >= noImprovementLimit)
 				break;
-			currentAverageFitness = avgFitness;
+			currentBestFitness = bestFitness;
 			System.out.println(population);
 		}
 		
 		if (isVerbose) {
-			Solution bestSolution = population.getBestSolution();
-			System.out.println("Best solution cost = " + bestSolution.getCost());
+			double bestFitness = population.getBestSolutionFitness();
+			Double finalFraction = bestKnownSolutions.getBKSFraction(instance, numberOfClusters, bestFitness);
+			System.out.println("Best solution cost = " + bestFitness + " (" + finalFraction + "%)");
 		}
 		
 		return true;

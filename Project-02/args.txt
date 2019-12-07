@@ -1,15 +1,7 @@
 -idir
 data/MSSC
 -ifile
-all.txt
+group.txt
 -verbose
--ngen
-1000
--minpsize
-100
--maxpsize
-200
--nclusters
-50
 -seed
 1

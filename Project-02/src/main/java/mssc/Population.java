@@ -30,7 +30,7 @@ public class Population extends ArrayList<Solution> {
 		this.instance = instance;
 		this.maxsize = maxsize;
 		this.minsize = minsize;
-		for (int i = 0; i < minsize; i++) {
+		for (int i = 0; i < maxsize; i++) {
 			Solution s = SolutionFactory.construct(instance, solutionIdCounter, constructiveMetaheuristic);
 			++solutionIdCounter;
 			costMap.put(s, s.getCost());
@@ -41,7 +41,7 @@ public class Population extends ArrayList<Solution> {
 	public void nextGeneration() {
 		final int parentCount = size();
 		final int numOfClusters = instance.getNumOfClusters();
-		final int matingPoolSize = parentCount / 4;
+		final int matingPoolSize = 2;
 		/* PARENT SELECTION THROUGH BINARY TOURNAMENT */
 		ArrayList<Solution> matingPool = new ArrayList<>(matingPoolSize);
 		for (int i = 0; i < matingPoolSize; i++) {
@@ -123,9 +123,9 @@ public class Population extends ArrayList<Solution> {
 			int currentSize = size();
 			TreeSet<Solution> ranking = new TreeSet<>((s1,s2) -> s1.getCost() > s2.getCost() ? -1 : 1);
 			ranking.addAll(this);
-			ArrayList<Solution> worstSolutions = new ArrayList<>(currentSize - maxsize);
+			ArrayList<Solution> worstSolutions = new ArrayList<>(currentSize - minsize);
 			for (Solution sol : ranking) {
-				if (currentSize >= minsize && currentSize <= maxsize) break;
+				if (currentSize == minsize) break;
 				worstSolutions.add(sol);
 				costMap.remove(sol);
 				--currentSize;
@@ -181,15 +181,16 @@ public class Population extends ArrayList<Solution> {
 		return minCostEntry.get().getKey();
 	}
 	
+	public double getBestSolutionFitness() {
+		return costMap.get(getBestSolution());
+	}
+	
 	@Override
 	public String toString() {
 		double averageFitness = getAverageFitness();
-		double fitnessVariance = 0.0;
-		for (Solution s : this)
-			fitnessVariance += Math.pow(costMap.get(s) - averageFitness, 2.0);
-		fitnessVariance /= size();
-		return String.format("Generation: %d\tPopulation size: %d\tAverage = %f\tVariance = %f",
-				generation, size(), averageFitness, fitnessVariance);
+		double bestSolutionCost = getBestSolutionFitness();
+		return String.format("Generation: %d\tPopulation size: %d\tAverage = %f\tBest = %f",
+				generation, size(), averageFitness, bestSolutionCost);
 	}
 	
 }
