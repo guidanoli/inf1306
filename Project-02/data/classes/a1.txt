@@ -1,0 +1,4 @@
+bavaria1.txt steps 2 10 1
+bavaria2.txt steps 2 10 1
+german.txt steps 2 10 1
+fisher.txt steps 2 10 1

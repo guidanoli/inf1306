@@ -30,7 +30,6 @@ public class BestKnownSolutions {
 			String key = getKey(instanceName, m);
 			map.put(key, bks);
 		}
-		System.out.println(map);
 	}
 	
 	private String getKey(String instanceName, int m) {
@@ -48,7 +47,7 @@ public class BestKnownSolutions {
 		String key = getKey(instanceName, m);
 		Double bks = map.get(key);
 		if (bks == null) return null;
-		return Math.abs(solutionCost-bks)/bks;
+		return (solutionCost-bks)/bks;
 	}
 	
 }

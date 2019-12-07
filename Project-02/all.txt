@@ -1,3 +1,0 @@
-bavaria1.txt
-bavaria2.txt
-german.txt

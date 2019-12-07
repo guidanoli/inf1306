@@ -1,0 +1,6 @@
+breast.txt enum 2 5 10 15 20 25 30 40 50
+congress.txt enum 2 5 10 15 20 25 30 40 50
+heart.txt enum 2 5 10 15 20 25 30 40 50
+ionosphere.txt enum 2 5 10 15 20 25 30 40 50
+liver.txt enum 2 5 10 15 20 25 30 40 50
+pima.txt enum 2 5 10 15 20 25 30 40 50

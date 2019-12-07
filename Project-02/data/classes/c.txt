@@ -1,0 +1,13 @@
+3droad.txt enum 2 3 5 10 15 20 25
+d15112.txt enum 2 3 5 10 15 20 25
+eye.txt enum 2 3 5 10 15 20 25
+gas.txt enum 2 3 5 10 15 20 25
+gisette.txt enum 2 3 5 10 15 20 25
+isolet.txt enum 2 3 5 10 15 20 25
+kegg.txt enum 2 3 5 10 15 20 25
+miniboone.txt enum 2 3 5 10 15 20 25
+online.txt enum 2 3 5 10 15 20 25
+pla85900.txt enum 2 3 5 10 15 20 25
+sensorless.txt enum 2 3 5 10 15 20 25
+shuttle.txt enum 2 3 5 10 15 20 25
+skin.txt enum 2 3 5 10 15 20 25
