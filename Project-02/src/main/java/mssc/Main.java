@@ -39,20 +39,20 @@ public class Main {
 	@Parameter(names = "-constructive", description = "Constructive metaheuristic")
 	String constructiveMetaheuristic = "random";
 	
-	@Parameter(names = {"-ipinfo"}, description = "Initial Population Info")
-	boolean initialPopulationInfo = false;
-	
-	@Parameter(names = {"-fpinfo"}, description = "Final Population Info")
-	boolean finalPopulationInfo = false;
-	
-	@Parameter(names = {"-ipsize"}, description = "Initial Population Size")
+	@Parameter(names = {"-minpsize"}, description = "Initial Population Size")
 	int initialPopulationSize = 100;
 	
 	@Parameter(names = {"-maxpsize"}, description = "Maximum Population Size")
 	int maxPopulationSize = 150;
 	
-	@Parameter(names = {"-tournamentK"}, description = "Number of parents per tournament")
-	int tournamentK = 2;
+	@Parameter(names = {"-ngen"}, description = "Maximum number of generations")
+	long maxNumOfGenerations = 100;
+	
+	@Parameter(names = {"-ngen-wo-improv"}, description = "Maximum number of generations without improving")
+	long noImprovementLimit = 10;
+	
+	@Parameter(names = {"-nclusters"}, description = "Number of clusters")
+	Integer numberOfClusters = null;
 	
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
@@ -134,15 +134,18 @@ public class Main {
 
 		System.out.println(instanceFile);
 		
-		Integer firstNumber = null;
-		try {
-			do {
-				firstNumber = Integer.parseInt(JOptionPane
-						.showInputDialog("Insert the number of clusters:"));
-			} while (firstNumber != null && firstNumber <= 0);
-		} catch (NumberFormatException nfe2) {
-			System.out.println(">>> Invalid input");
-			return false;
+		if (numberOfClusters == null) {
+			try {
+				do {
+					numberOfClusters = Integer.parseInt(JOptionPane
+							.showInputDialog("Insert the number of clusters for instance " + instanceFile.getName() + ":"));
+				} while (numberOfClusters != null && numberOfClusters <= 0);
+			} catch (NumberFormatException nfe2) {
+				System.out.println(">>> Invalid input");
+				return false;
+			}
+			if (isVerbose)
+				System.out.println("#clusters = " + numberOfClusters);
 		}
 				
 		/* Try to create Scanner object */
@@ -158,7 +161,7 @@ public class Main {
 		/* Try to parse instance file */
 		Instance instance = null;
 		try {
-			instance = Instance.parse(sc, firstNumber);
+			instance = Instance.parse(sc, numberOfClusters);
 		} catch (NoSuchElementException nsee) {
 			nsee.printStackTrace();
 			sc.close();
@@ -185,23 +188,37 @@ public class Main {
 		Population population = new Population(instance, initialPopulationSize,
 									maxPopulationSize, constructiveMetaheuristic);
 		population.setRandomSeed(seed);
-				
-		if (initialPopulationInfo)
-			System.out.println(population);
 
 		if (!population.isValid(isVerbose)) {
 			System.out.println(">>> Invalid initial population.");
 			return false;
 		}
 		
-		population.nextGeneration(tournamentK);
-		
-		if (finalPopulationInfo)
+		if (isVerbose)
 			System.out.println(population);
 		
-		if (!population.isValid(isVerbose)) {
-			System.out.println(">>> Invalid final population.");
-			return false;
+		double currentAverageFitness = population.getAverageFitness();
+		long generationsWithoutImprovement = 0;
+		while (population.getGenerationCount() < maxNumOfGenerations) {
+			population.nextGeneration();
+			if (!population.isValid(isVerbose)) {
+				System.out.println(">>> Invalid population at generation " + population.getGenerationCount());
+				return false;
+			}
+			double avgFitness = population.getAverageFitness();
+			if (Double.compare(currentAverageFitness, avgFitness) == 0)
+				++generationsWithoutImprovement;
+			else
+				generationsWithoutImprovement = 0;
+			if (generationsWithoutImprovement >= noImprovementLimit)
+				break;
+			currentAverageFitness = avgFitness;
+			System.out.println(population);
+		}
+		
+		if (isVerbose) {
+			Solution bestSolution = population.getBestSolution();
+			System.out.println("Best solution cost = " + bestSolution.getCost());
 		}
 		
 		return true;

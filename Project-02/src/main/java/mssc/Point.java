@@ -1,7 +1,6 @@
 package mssc;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.StringJoiner;
 
 public class Point extends ArrayList<Double>{
@@ -71,7 +70,7 @@ public class Point extends ArrayList<Double>{
 	
 	@Override
 	public int hashCode() {
-		return Objects.hash(super.hashCode(), id);
+		return id;
 	}
 	
 }

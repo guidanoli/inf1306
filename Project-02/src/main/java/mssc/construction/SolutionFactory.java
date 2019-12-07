@@ -17,10 +17,10 @@ public class SolutionFactory {
 		metaheuristics.put("random", new RandomSolution());
 	}
 	
-	public static Solution construct(Instance instance, String algorithm) {
+	public static Solution construct(Instance instance, int id, String algorithm) {
 		ConstructiveMetaheuristic cmh = (ConstructiveMetaheuristic) metaheuristics.get(algorithm);
 		if (cmh == null) return null;
-		return cmh.construct(instance, random);
+		return cmh.construct(instance, id, random);
 	}
 	
 	public static void setRandomSeed(long seed) {

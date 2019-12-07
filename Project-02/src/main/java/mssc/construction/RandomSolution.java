@@ -10,8 +10,8 @@ import mssc.Solution;
 
 public class RandomSolution implements ConstructiveMetaheuristic {
 
-	public Solution construct(Instance instance, Random rng) {
-		Solution solution = new Solution(instance);
+	public Solution construct(Instance instance, int id, Random rng) {
+		Solution solution = new Solution(instance, id);
 		/* Arrange all entities in a random order */
 		ArrayList<Point> randomOrder = new ArrayList<>(instance.getEntities());
 		Collections.shuffle(randomOrder, rng);

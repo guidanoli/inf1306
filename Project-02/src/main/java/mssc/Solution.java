@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Random;
 import java.util.StringJoiner;
 import java.util.TreeMap;
@@ -14,10 +15,12 @@ public class Solution extends HashMap<Point, Point> {
 	private static final long serialVersionUID = -6755886026474677503L;
 	
 	Instance instance;
+	int id;
 	ArrayList<Point> clusters = new ArrayList<>();
 	
-	public Solution(Instance instance) {
+	public Solution(Instance instance, int id) {
 		this.instance = instance;
+		this.id = id;
 		for (int i = 0; i < instance.getNumOfClusters(); i++)
 			clusters.add(new Point(i+1, "c", instance.getDimension()));
 			
@@ -46,7 +49,10 @@ public class Solution extends HashMap<Point, Point> {
 		}
 		for (Point c : clusters) {
 			if (!containsValue(c)) {
-				if (isVerbose) System.out.println("Empty clusters");
+				if (isVerbose) {
+					System.out.println(this);
+					System.out.println("Cluster "+c+" is empty!");
+				}
 				return false;
 			}
 		}
@@ -74,28 +80,55 @@ public class Solution extends HashMap<Point, Point> {
 		}
 	}
 	
+	public void decodeFromClusterPositionsIgnoring(Point cluster) {
+		/* Assigning each entity to its closest cluster */
+		Point firstC = clusters.get(0).equals(cluster) ? clusters.get(1) : clusters.get(0);
+		for (Point e : instance.getEntities()) {
+			Point ec = firstC;
+			double dist = ec.getSumOfSquaresTo(e);
+			for (Point c : clusters) {
+				if (c.equals(cluster)) continue;
+				double cDist = c.getSumOfSquaresTo(e);
+				if (cDist < dist) {
+					dist = cDist;
+					ec = c;
+				}
+			}
+			put(e, ec);
+		}
+	}
+		
 	public Point getRandomEntityDistantFromCenter(Random rng) {
 		double distSum = 0.0;
 		for (Point e : instance.getEntities())
 			distSum += Math.sqrt(get(e).getSumOfSquaresTo(e));
 		double Fp = 0.0;
 		double u = rng.nextDouble();
+		Point lastEntity = null;
 		for (Point e : instance.getEntities()) {
 			double p =  Math.sqrt(get(e).getSumOfSquaresTo(e)) / distSum;
-			Fp += p;
-			if (u <= Fp) return e;
+			if (p > 0.0) {
+				Fp += p;
+				if (u <= Fp) return e;
+				lastEntity = e;
+			}
 		}
-		return null;
+		/* In case the sum of p don't add up to 1.0 exactly */
+		return lastEntity;
+	}
+	
+	public boolean canBeRemovedFromCluster(Point e, Point newCluster) {
+		Point c = get(e);
+		for (Point pe : keySet()) {
+			if (get(pe).equals(c) && !pe.equals(e))
+				return true;
+		}
+		return false;
 	}
 	
 	public void unassignCluster(Point c) {
-		HashSet<Point> neighbours = new HashSet<>();
-		forEach((e,ec) -> {
-			if (ec.equals(c))
-				neighbours.add(e);
-		});
-		for (Point e : neighbours)
-			remove(e);
+		for (int i = 0; i < c.size(); i++)
+			c.set(i, Double.MAX_VALUE);
 	}
 	
 	/**
@@ -117,16 +150,11 @@ public class Solution extends HashMap<Point, Point> {
 			
 		for (Point e : instance.getEntities()) {
 			Point c = get(e);
-			for (int i = 0; i < instance.getDimension(); i++)
-				c.set(i, e.get(i) + c.get(i)); /* Sums itself to the cluster */
-		}
-		
-		for (Point c : clusters) {
 			int cSize = clusterSizes[c.getId()];
 			for (int i = 0; i < instance.getDimension(); i++)
-				c.set(i, c.get(i) / cSize);
+				c.set(i, c.get(i) + e.get(i) / cSize); /* Sums itself to the cluster */
 		}
-		
+				
 		do {
 			changedEntities.clear(); /* Forgets changed entities */
 			
@@ -152,12 +180,11 @@ public class Solution extends HashMap<Point, Point> {
 				break; /* If clusters didn't change, don't even bother... */
 
 			/* Aligning the cluster to the centroid of its entities */
-			int dimension = instance.getDimension();
 			changedEntities.forEach((e,iCluster) -> {
 				Point fCluster = get(e);
 				int fSize = clusterSizes[fCluster.getId()];
 				int iSize = clusterSizes[iCluster.getId()];
-				for (int i = 0; i < dimension; i++) {
+				for (int i = 0; i < instance.getDimension(); i++) {
 					double ei = e.get(i);
 					iCluster.set(i, (iCluster.get(i) * iSize - ei) / (iSize - 1));
 					fCluster.set(i, (fCluster.get(i) * fSize + ei) / (fSize + 1));
@@ -167,6 +194,24 @@ public class Solution extends HashMap<Point, Point> {
 			});
 						
 		} while (!changedEntities.isEmpty());
+		
+		while (true) {
+			boolean hasEmptyCluster = false;
+			for (Point c : clusters) {
+				if (!containsValue(c)) {
+					hasEmptyCluster = true;
+					Random random = new Random(Objects.hash(c.getId(), id));
+					Point randomPoint = getRandomEntityDistantFromCenter(random);
+					while (clusterSizes[get(randomPoint).getId()] == 1)
+						randomPoint = getRandomEntityDistantFromCenter(random);
+					--clusterSizes[get(randomPoint).getId()];
+					++clusterSizes[c.getId()];
+					c.copyFrom(randomPoint);
+					decodeFromClusterPositions();
+				}
+			}
+			if (!hasEmptyCluster) break;
+		}
 	}
 	
 	@Override
@@ -210,6 +255,11 @@ public class Solution extends HashMap<Point, Point> {
 			sj.add("c" + c.getId() + " = {" + csj.toString() + "} cost = " + cost);
 		});
 		return sj.toString();
+	}
+	
+	@Override
+	public int hashCode() {
+		return id;
 	}
 	
 }

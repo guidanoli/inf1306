@@ -12,6 +12,8 @@ import java.util.Scanner;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.Test;
 
 import mssc.construction.RandomSolution;
@@ -20,7 +22,7 @@ import mssc.construction.SolutionFactory;
 class SolutionTest {
 
 	final static String instanceDirPath = Paths.get("data", "MSSC").toString();
-	final static String instanceFilename = "data.txt";
+	final static String instanceFilename = "german.txt";
 	final static int numberOfClusters = 10;
 	static Instance instance;
 		
@@ -59,7 +61,7 @@ class SolutionTest {
 	@Test
 	@DisplayName("when creating a solution through random construction")
 	void testRandomConstructiveMetaheuristic() {
-		Solution s = SolutionFactory.construct(instance, "random");
+		Solution s = SolutionFactory.construct(instance, 0, "random");
 		if (s == null) fail("Invalid metaheuristic");
 		assertTrue(s.isValid(false), "it should create a valid solution");
 	}
@@ -69,12 +71,22 @@ class SolutionTest {
 	void testEquals() {
 		Random rng1 = new Random(0), rng2 = new Random(0);
 		RandomSolution randomSol = new RandomSolution();
-		Solution s1 = randomSol.construct(instance, rng1),
-				s2 = randomSol.construct(instance, rng2);
+		Solution s1 = randomSol.construct(instance, 0, rng1),
+				s2 = randomSol.construct(instance, 0, rng2);
 		assertTrue(s1.equals(s2), "equals should return true");
 		s1.kMeans();
 		s2.kMeans();
 		assertTrue(s1.equals(s2), "equals should return true even after k-Means");
+	}
+	
+	@RepeatedTest(name = "with seed = {currentRepetition}", value = 64)
+	@DisplayName("when operating a k-means")
+	void testKmeans(RepetitionInfo info) {
+		int n = info.getCurrentRepetition();
+		Solution s = SolutionFactory.construct(instance, n, "random");
+		if (s == null) fail("Invalid metaheuristic");
+		s.kMeans();
+		assertTrue(s.isValid(false), "the solution should remain valid");
 	}
 
 }

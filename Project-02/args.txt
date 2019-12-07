@@ -3,7 +3,13 @@ data/MSSC
 -ifile
 all.txt
 -verbose
--ipinfo
--fpinfo
+-ngen
+1000
+-minpsize
+100
+-maxpsize
+200
+-nclusters
+50
 -seed
 1

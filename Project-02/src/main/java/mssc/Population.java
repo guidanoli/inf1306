@@ -1,9 +1,14 @@
 package mssc;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Random;
+import java.util.TreeSet;
 
 import extern.HungarianAlgorithm;
 import mssc.construction.SolutionFactory;
@@ -15,6 +20,8 @@ public class Population extends ArrayList<Solution> {
 	Random random = new Random();
 	Instance instance;
 	int maxsize, minsize;
+	long generation = 0;
+	int solutionIdCounter = 0;
 	HashMap<Solution, Double> costMap = new HashMap<>();
 	
 	public Population(Instance instance, int minsize, int maxsize,
@@ -24,32 +31,31 @@ public class Population extends ArrayList<Solution> {
 		this.maxsize = maxsize;
 		this.minsize = minsize;
 		for (int i = 0; i < minsize; i++) {
-			Solution s = SolutionFactory.construct(instance, constructiveMetaheuristic);
+			Solution s = SolutionFactory.construct(instance, solutionIdCounter, constructiveMetaheuristic);
+			++solutionIdCounter;
 			costMap.put(s, s.getCost());
 			add(s);
 		}
 	}
 	
-	public void nextGeneration(int tournamentK) {
+	public void nextGeneration() {
 		final int parentCount = size();
 		final int numOfClusters = instance.getNumOfClusters();
-		final int matingPoolSize = parentCount / 2;
+		final int matingPoolSize = parentCount / 4;
 		/* PARENT SELECTION THROUGH BINARY TOURNAMENT */
 		ArrayList<Solution> matingPool = new ArrayList<>(matingPoolSize);
 		for (int i = 0; i < matingPoolSize; i++) {
-			Solution winningSolution = get(random.nextInt(parentCount));
-			for (int j = 1; j < tournamentK; j++) {
-				Solution disputingSolution = get(random.nextInt(parentCount));
-				if (costMap.get(disputingSolution) < costMap.get(winningSolution))
-					winningSolution = disputingSolution;
-			}
-			matingPool.add(winningSolution);
+			Solution s1 = get(random.nextInt(parentCount));
+			Solution s2 = get(random.nextInt(parentCount));
+			Solution winner = costMap.get(s1) < costMap.get(s2) ? s1 : s2;
+			matingPool.add(winner);
 		}
 		/* BREEDING */
-		for (int i = 0; i < matingPoolSize; i += 2) {
-			Solution firstParent = matingPool.get(i);
-			Solution secondParent = matingPool.get(i+1);
-			Solution offspring = new Solution(instance);
+		for (int i = 1; i < matingPoolSize; i += 2) {
+			Solution firstParent = matingPool.get(i-1);
+			Solution secondParent = matingPool.get(i);
+			Solution offspring = new Solution(instance, solutionIdCounter);
+			++solutionIdCounter;
 			double [][] costMatrix = new double[numOfClusters][numOfClusters];
 			ArrayList<Point> firstParentClusters = firstParent.getClusters();
 			ArrayList<Point> secondParentClusters = secondParent.getClusters();
@@ -63,23 +69,22 @@ public class Population extends ArrayList<Solution> {
 			/* CROSSOVER */
 			HungarianAlgorithm hungarian = new HungarianAlgorithm(costMatrix);
 			int [] matching = hungarian.execute();
-			ArrayList<Point> offsprintClusters = offspring.getClusters();
+			ArrayList<Point> offspringClusters = offspring.getClusters();
 			for (int j = 0; j < numOfClusters; j++) {
 				Point c1 = firstParentClusters.get(j);
 				Point c2 = secondParentClusters.get(matching[j]);
 				/* Bernoulli with p = 0.5 */
 				Point chosenCluster = random.nextBoolean() ? c1 : c2;
-				offsprintClusters.get(j).copyFrom(chosenCluster);
+				offspringClusters.get(j).copyFrom(chosenCluster);
 			}
 			offspring.decodeFromClusterPositions();
 			/* MUTATION */
-			Point randomCluster = offsprintClusters.get(random.nextInt(numOfClusters));
-			offspring.unassignCluster(randomCluster);
-			offspring.decodeFromClusterPositions();
+			Point randomCluster = offspringClusters.get(random.nextInt(numOfClusters));
+			offspring.decodeFromClusterPositionsIgnoring(randomCluster);
 			Point randomPoint = offspring.getRandomEntityDistantFromCenter(random);
 			while (true) {
 				boolean coincides = false;
-				for (Point cluster : offsprintClusters) {
+				for (Point cluster : offspringClusters) {
 					if (cluster.equals(randomPoint)) {
 						randomPoint = offspring.getRandomEntityDistantFromCenter(random);
 						coincides = true;
@@ -108,26 +113,46 @@ public class Population extends ArrayList<Solution> {
 					}
 				}
 			}
-			for (int index : cloneSolutionIndexes) {
-				System.out.println("Removing "+index);
-				remove(index);
+			ArrayList<Solution> cloneSolutions = new ArrayList<>();
+			cloneSolutionIndexes.forEach((i) -> cloneSolutions.add(get(i)));
+			cloneSolutions.forEach((s) -> {
+				remove(s);
+				costMap.remove(s);
+			});
+			/* ELIMINATION OF THE WORST */
+			int currentSize = size();
+			TreeSet<Solution> ranking = new TreeSet<>((s1,s2) -> s1.getCost() > s2.getCost() ? -1 : 1);
+			ranking.addAll(this);
+			ArrayList<Solution> worstSolutions = new ArrayList<>(currentSize - maxsize);
+			for (Solution sol : ranking) {
+				if (currentSize >= minsize && currentSize <= maxsize) break;
+				worstSolutions.add(sol);
+				costMap.remove(sol);
+				--currentSize;
 			}
+			removeAll(worstSolutions);
 		}
+		++generation;
 	}
 	
 	public boolean isValid(boolean isVerbose) {
 		int size = size();
 		if (size < minsize) {
 			if (isVerbose)
-				System.out.println("Population size is too low!");
+				System.out.printf("Population size is too low (%d < %d)!\n", size(), minsize);
 			return false;
 		}
 		if (size > maxsize) {
 			if (isVerbose)
-				System.out.println("Population size is too high!");
+				System.out.printf("Population size is too high (%d > %d)\n!", size(), maxsize);
 			return false;
 		}
-		for (Solution s : this) if (!s.isValid(isVerbose)) return false; 
+		for (Solution s : this) {
+			if (!s.isValid(isVerbose)) {
+				System.out.println("Invalid solution #" + s.id + "!");
+				return false; 
+			}
+		}
 		return true;
 	}
 	
@@ -135,17 +160,36 @@ public class Population extends ArrayList<Solution> {
 		random.setSeed(seed);
 	}
 	
+	public long getGenerationCount() {
+		return generation;
+	}
+	
+	public double getAverageFitness() {
+		double averageFitness = 0.0;
+		for (Solution s : this) {
+			if (!costMap.containsKey(s)) costMap.put(s, s.getCost());
+			averageFitness += costMap.get(s);
+		}
+		averageFitness /= size();
+		return averageFitness;
+	}
+	
+	public Solution getBestSolution() {
+		Optional<Entry<Solution, Double>> minCostEntry = costMap.entrySet()
+				.stream()
+				.min(Comparator.comparingDouble(Map.Entry::getValue));
+		return minCostEntry.get().getKey();
+	}
+	
 	@Override
 	public String toString() {
-		double averageFitness = 0.0;
-		for (Solution s : this)
-			averageFitness += costMap.get(s);
-		averageFitness /= size();
+		double averageFitness = getAverageFitness();
 		double fitnessVariance = 0.0;
 		for (Solution s : this)
 			fitnessVariance += Math.pow(costMap.get(s) - averageFitness, 2.0);
 		fitnessVariance /= size();
-		return String.format("Average = %f\nVariance = %f", averageFitness, fitnessVariance);
+		return String.format("Generation: %d\tPopulation size: %d\tAverage = %f\tVariance = %f",
+				generation, size(), averageFitness, fitnessVariance);
 	}
 	
 }
