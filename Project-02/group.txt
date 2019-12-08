@@ -1,0 +1,3 @@
+page.txt enum 2
+pendigit.txt enum 2
+letter.txt enum 2

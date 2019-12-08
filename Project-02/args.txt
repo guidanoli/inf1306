@@ -1,7 +1,7 @@
 -idir
 data/MSSC
 -ifile
-data/classes/b.txt
+group.txt
 -seed
 1
 -csv

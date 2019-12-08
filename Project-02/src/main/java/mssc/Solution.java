@@ -104,7 +104,7 @@ public class Solution extends HashMap<Point, Point> {
 			distSum += Math.sqrt(get(e).getSumOfSquaresTo(e));
 		double Fp = 0.0;
 		double u = rng.nextDouble();
-		Point lastEntity = null;
+		Point lastEntity = instance.getEntityAt(0);
 		for (Point e : instance.getEntities()) {
 			double p =  Math.sqrt(get(e).getSumOfSquaresTo(e)) / distSum;
 			if (p > 0.0) {
