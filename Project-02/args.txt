@@ -1,10 +1,12 @@
 -idir
 data/MSSC
 -ifile
-group.txt
+data/classes/b.txt
+-verbose
 -seed
 1
 -csv
+-csv-backups
 -CSV
 1=name
 -CSV

@@ -1,3 +1,1 @@
-page.txt enum 2
-pendigit.txt enum 2
-letter.txt enum 2
+miniboone.txt enum 2 3 5 10 15 20 25

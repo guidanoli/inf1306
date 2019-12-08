@@ -57,7 +57,7 @@ public class Main {
 	long maxNumOfGenerations = 5000;
 	
 	@Parameter(names = {"-ngen-wo-improv"}, description = "Maximum number of generations without improving")
-	long noImprovementLimit = 5000;
+	long noImprovementLimit = 500;
 		
 	@Parameter(names = "-bks", description = "Best Known Solution file")
 	String bksPath = "data/bks.txt";
@@ -70,6 +70,9 @@ public class Main {
 
 	@DynamicParameter(names = {"-CSV"}, description = "CSV data")
 	Map<String, String> csvData = new HashMap<>();
+	
+	@Parameter(names = {"-csv-backups"}, description = "Save results in .csv every iteration")
+	boolean backupCSVs = false;
 	
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
@@ -195,6 +198,16 @@ public class Main {
 							/* -persist will continue parsing */
 							if (!isPersistant)
 								break;
+						}
+						if (saveCSV && backupCSVs) {
+							String csvFilePath = null;
+							try {
+								csvFilePath = csv.writeToFile();
+							} catch (IOException e) {
+								e.printStackTrace();
+								break;
+							}
+							System.out.println("Saved backup CSV to " + csvFilePath);
 						}
 					}
 					System.out.println();
