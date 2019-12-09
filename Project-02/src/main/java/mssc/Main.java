@@ -330,7 +330,7 @@ public class Main {
 		
 		if (isVerbose)
 			if (finalFraction != null)
-				System.out.println("Best solution cost = " + bestFitness + " (" + finalFraction + "%)");
+				System.out.println("Best solution cost = " + bestFitness + " (" + finalFraction*100 + "%)");
 			else
 				System.out.println("Best solution cost = " + bestFitness);
 		
