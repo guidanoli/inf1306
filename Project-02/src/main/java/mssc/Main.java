@@ -77,6 +77,9 @@ public class Main {
 	@Parameter(names = {"-seed"}, description = "RNG seed")
 	long seed = 0;
 	
+	@Parameter(names = {"-remaining-gens"}, description = "Print remaining generations")
+	boolean printRemainingGenerations = false;
+	
 	@Parameter(names = {"-help", "--help"}, description = "Help with application parameters", help = true)
 	boolean help = false;
 	
@@ -315,7 +318,10 @@ public class Main {
 				break;
 			currentBestFitness = bestFitness;
 			if (isVerbose)
-				System.out.println(population);
+				if (printRemainingGenerations)
+					System.out.println(population+"\tRemaining = "+(noImprovementLimit-generationsWithoutImprovement));
+				else
+					System.out.println(population);
 		}
 		double deltaTms = (System.nanoTime() - t0)/1E9;
 		
